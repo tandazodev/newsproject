@@ -7,37 +7,66 @@
     body { font-family: sans-serif; max-width: 720px; margin: 2rem auto; }
     #estado { font-weight: bold; }
     .noticia { border: 1px solid #ccc; border-radius: 6px; padding: .6rem 1rem; margin: .6rem 0; }
+    .noticia img { max-width: 100%; border-radius: 4px; }
     .cat { font-size: .8rem; color: #555; }
+    input { width: 22rem; }
   </style>
 </head>
 <body>
   <h1>Notificaciones en vivo</h1>
-  <p>Estado: <span id="estado">conectando...</span></p>
+  <p>
+    user_id: <input id="uid" placeholder="UUID del usuario">
+    <button id="conectar">Conectar</button>
+  </p>
+  <p>Estado: <span id="estado">desconectado</span></p>
   <div id="lista"></div>
 
   <script>
+    // Prueba directa contra el servicio (puerto 8080 dentro del contenedor, o 8083 en local).
+    // Por el gateway: ws://localhost:8080/ws/notifications?user_id=<id>
     const estado = document.getElementById('estado');
     const lista = document.getElementById('lista');
-    const ws = new WebSocket(`ws://${location.host}/ws/notifications`);
+    const uid = document.getElementById('uid');
+    uid.value = new URLSearchParams(location.search).get('user_id') || '';
+    let ws;
 
-    ws.onopen = () => estado.textContent = 'conectado';
-    ws.onclose = () => estado.textContent = 'desconectado';
-    ws.onerror = () => estado.textContent = 'error';
-    ws.onmessage = (e) => {
-      const ev = JSON.parse(e.data);
-      const p = ev.payload;
+    function pintar(d) {
       const div = document.createElement('div');
       div.className = 'noticia';
       const cat = document.createElement('div');
       cat.className = 'cat';
-      cat.textContent = `${p.category} | ${p.source}`;
+      cat.textContent = `${d.category} | ${d.source ?? ''}`;
       const titulo = document.createElement('strong');
-      titulo.textContent = p.title;
+      titulo.textContent = d.title;
       const resumen = document.createElement('p');
-      resumen.textContent = p.summary;
-      div.append(cat, titulo, resumen);
+      resumen.textContent = d.summary ?? '';
+      div.append(cat);
+      if (d.image_url) {
+        const img = document.createElement('img');
+        img.src = d.image_url;
+        img.onerror = () => img.remove();
+        div.append(img);
+      }
+      div.append(titulo, resumen);
       lista.prepend(div);
-    };
+    }
+
+    function conectar() {
+      if (ws) ws.close();
+      const id = uid.value.trim();
+      if (!id) { estado.textContent = 'falta user_id'; return; }
+      ws = new WebSocket(`ws://${location.host}/ws?user_id=${encodeURIComponent(id)}`);
+      ws.onopen = () => estado.textContent = 'conectado';
+      ws.onclose = () => estado.textContent = 'desconectado';
+      ws.onerror = () => estado.textContent = 'error';
+      ws.onmessage = (e) => {
+        if (e.data === 'pong') return;
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'notification.new_article') pintar(msg.data);
+      };
+    }
+    document.getElementById('conectar').onclick = conectar;
+    if (uid.value) conectar();
   </script>
 </body>
 </html>

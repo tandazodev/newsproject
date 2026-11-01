@@ -23,6 +23,7 @@ public record ArticleClassifiedEvent(
             String source,
             Instant publishedAt,
             Instant ingestedAt,
+            String imageUrl,
             String category,
             List<String> tags,
             double score) {
