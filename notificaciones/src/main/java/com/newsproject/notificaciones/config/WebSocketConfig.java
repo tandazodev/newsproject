@@ -18,7 +18,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // TODO: restringir origenes y validar JWT en el handshake (HandshakeInterceptor)
-        registry.addHandler(handler, "/ws/notifications").setAllowedOrigins("*");
+        // El gateway reenvia /ws/notifications?user_id=<id> a ws://notificaciones:8080/ws?user_id=<id>.
+        // La autenticacion avanzada queda fuera del alcance (el usuario se identifica por su user_id).
+        registry.addHandler(handler, "/ws", "/ws/notifications").setAllowedOrigins("*");
     }
 }

@@ -18,7 +18,8 @@ public class RabbitConfig {
 
     @Bean
     public MessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
-        // Reutiliza el ObjectMapper de Spring (snake_case configurado en application.yml)
+        // Reutiliza el ObjectMapper de Spring (snake_case configurado en application.yml).
+        // Los campos desconocidos se ignoran (docs/eventos.md, regla 4).
         return new Jackson2JsonMessageConverter(objectMapper);
     }
 }
