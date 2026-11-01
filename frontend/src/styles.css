@@ -106,6 +106,177 @@ body {
   text-transform: capitalize;
 }
 
+/* Formularios comunes (tarjeta, campos, botones y avisos) */
+.suave {
+  color: var(--suave);
+}
+
+.tarjeta {
+  margin-bottom: 16px;
+  padding: 20px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.campo small {
+  font-weight: 400;
+}
+
+.campo input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 400;
+}
+
+.campo input:focus-visible,
+.casilla input:focus-visible,
+.boton:focus-visible,
+.pestana:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.boton {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border: 1px solid var(--acento);
+  border-radius: 6px;
+  background: var(--acento);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boton-secundario {
+  background: #fff;
+  color: var(--acento);
+}
+
+.aviso {
+  margin: 0;
+  padding: 8px 12px;
+  border-left: 4px solid;
+  border-radius: 4px;
+}
+
+.aviso-ok {
+  border-color: #1a7f37;
+  background: #dafbe1;
+}
+
+.aviso-error {
+  border-color: var(--alerta);
+  background: #ffebe9;
+}
+
+.aviso-info {
+  border-color: var(--acento);
+  background: #ddf4ff;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.enlace {
+  color: var(--acento);
+}
+
+.pie {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* Preferencias */
+.pestanas {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.pestana {
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--suave);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pestana.activa {
+  border-bottom-color: var(--acento);
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.usuario-actual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.usuario-actual div {
+  display: flex;
+  flex-direction: column;
+}
+
+.casillas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.casillas legend {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.casilla input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--acento);
+}
+
 @media (max-width: 600px) {
   .barra {
     flex-direction: column;
