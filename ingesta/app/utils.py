@@ -1,54 +1,59 @@
 # utils.py
 import uuid
 import hashlib
-import re
-from urllib.parse import urlparse, urlunparse
-from bs4 import BeautifulSoup
+import warnings
+from datetime import datetime, timezone
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+
+# Algunos resúmenes son solo una URL; BeautifulSoup avisa, pero no es un error.
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
+
+# normalize_url, clean_html y entry_text son copia exacta de las de
+# clasificacion/tools/collect_dataset.py: el modelo debe ver en producción el mismo
+# texto que vio al entrenar (docs/eventos.md, regla 7). Si cambian allá, cambiarlas aquí.
+
 
 def normalize_url(url: str) -> str:
-    """
-    Normaliza una URL eliminando parámetros de rastreo (utm) y fragmentos.
-    Garantiza compatibilidad estricta con el sistema original.
-    """
-    if not url:
-        return ""
-    parsed = urlparse(url.strip())
-    # Limpiar query params de utm_
-    query_parts = parsed.query.split('&')
-    clean_query = '&'.join([q for q in query_parts if not q.startswith('utm_') and q])
-    # Reconstruir URL sin fragmento (#)
-    normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, clean_query, ''))
-    return normalized.rstrip('/')
+    """Misma normalización que el recolector: sin utm_*, fbclid, fragmento ni / final."""
+    s = urlsplit(url.strip())
+    query = [(k, v) for k, v in parse_qsl(s.query) if not k.startswith("utm_") and k not in ("fbclid", "gclid")]
+    path = s.path.rstrip("/") or "/"
+    return urlunsplit((s.scheme.lower(), s.netloc.lower(), path, urlencode(query), ""))
 
-def clean_html(html_content: str) -> str:
-    """
-    Limpia tags HTML de un texto sin unir palabras juntas.
-    """
-    if not html_content:
-        return ""
-    soup = BeautifulSoup(html_content, "html.parser")
-    return soup.get_text(separator=" ", strip=True)
 
-def entry_text(entry: dict, title: str) -> str:
+def clean_html(html: str) -> str:
+    return " ".join(BeautifulSoup(html or "", "html.parser").get_text(" ").split())
+
+
+def entry_text(entry) -> str:
+    """Título + el texto más largo disponible (contenido completo o resumen)."""
+    title, body = entry_title_body(entry)
+    return f"{title}. {body}".strip() if body else title
+
+
+def entry_title_body(entry) -> tuple[str, str]:
+    """Separa lo que entry_text une: title + ". " + body == entry_text(entry).
+
+    Son los campos `title` y `body` de article.ingested; Clasificación predice sobre
+    title + ". " + body, igual que el recolector del dataset.
     """
-    Extrae el texto de la noticia priorizando content sobre summary.
-    No añade puntos finales al título y se asegura de no repetir el título en el cuerpo.
-    """
-    body_html = ""
-    if 'content' in entry and len(entry.content) > 0:
-        body_html = entry.content[0].value
-    elif 'summary' in entry:
-        body_html = entry.summary
-        
-    cleaned_body = clean_html(body_html)
-    
-    # Evitar repetir el título al inicio del cuerpo
-    if cleaned_body.startswith(title):
-        cleaned_body = cleaned_body[len(title):].strip()
-        
-    # Eliminar puntuación inicial sobrante tras remover el título
-    cleaned_body = re.sub(r'^[^\w\s]+', '', cleaned_body).strip()
-    return cleaned_body
+    parts = [c.get("value", "") for c in entry.get("content", [])] + [entry.get("summary", "")]
+    body = max((clean_html(p) for p in parts), key=len, default="")
+    title = " ".join(entry.get("title", "").split())
+    return title, body
+
+
+def entry_date(entry) -> str | None:
+    """Fecha de publicación en ISO 8601 UTC con Z (igual que el recolector)."""
+    parsed = entry.get("published_parsed") or entry.get("updated_parsed")
+    if not parsed:
+        return None
+    return datetime(*parsed[:6], tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def utc_now_z() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 def entry_image(entry: dict) -> str | None:
     """

@@ -3,22 +3,23 @@ import httpx
 import feedparser
 import logging
 from datetime import datetime, timezone
-from dateutil import parser as date_parser
 from .config import settings
 from .database import db_manager
-from .utils import normalize_url, entry_text, entry_image, generate_article_id, generate_hash
+from .utils import (normalize_url, entry_title_body, entry_date, entry_image, utc_now_z,
+                    generate_article_id, generate_hash)
 from .rabbitmq import retry_pending_articles
 
 logger = logging.getLogger(__name__)
 
-async def fetch_feed(url: str) -> str:
+async def fetch_feed(url: str) -> bytes:
     """Descarga el contenido del feed RSS usando httpx de manera asíncrona."""
     async with httpx.AsyncClient(timeout=settings.HTTP_TIMEOUT_SECONDS, follow_redirects=True) as client:
         headers = {"User-Agent": settings.USER_AGENT}
         response = await client.get(url, headers=headers)
         response.raise_for_status()
-        # Asegurar decodificación UTF-8
-        return response.content.decode('utf-8', errors='replace')
+        # Bytes sin decodificar, como el recolector: feedparser respeta la
+        # codificación que declara el propio XML.
+        return response.content
 
 async def scrape_source(source_id: str):
     """
@@ -55,16 +56,17 @@ async def scrape_source(source_id: str):
                     
                 norm_url = normalize_url(raw_url)
                 article_id = generate_article_id(norm_url)
-                title = getattr(entry, "title", "").strip()
-                body = entry_text(entry, title)
+                # title + ". " + body es el mismo texto que entry_text del recolector
+                title, body = entry_title_body(entry)
+                if not title or not body:
+                    # title y body son obligatorios en article.ingested: no se publica
+                    continue
                 img_url = entry_image(entry)
                 content_hash = generate_hash(title, body)
-                
-                # Parsear published_at a UTC
-                pub_date = datetime.now(timezone.utc)
-                if hasattr(entry, "published"):
-                    pub_date = date_parser.parse(entry.published).astimezone(timezone.utc)
-                
+
+                # published_at en ISO 8601 UTC con Z; si el feed no trae fecha, la hora actual
+                pub_date = entry_date(entry) or utc_now_z()
+
                 # Armar documento para DB
                 article_doc = {
                     "_id": article_id,
@@ -72,7 +74,7 @@ async def scrape_source(source_id: str):
                     "title": title,
                     "body": body,
                     "source": source["name"],
-                    "published_at": pub_date.isoformat(),
+                    "published_at": pub_date,
                     "image_url": img_url,
                     "hash": content_hash,
                     "published": False  # Se actualizará a True tras enviar a RabbitMQ

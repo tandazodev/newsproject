@@ -15,9 +15,11 @@ async def connect_to_mongo():
     """Establece conexión a MongoDB, crea índices y carga fuentes iniciales."""
     # serverSelectionTimeoutMS corto: si MongoDB aún no arranca, falla rápido y
     # main.with_retries vuelve a intentar con espera creciente.
-    client = AsyncIOMotorClient(settings.DATABASE_URL, serverSelectionTimeoutMS=2000)
+    # tz_aware: las fechas vuelven como UTC con zona y se serializan con Z.
+    client = AsyncIOMotorClient(settings.DATABASE_URL, serverSelectionTimeoutMS=2000, tz_aware=True)
     try:
-        db = client[settings.DATABASE_NAME]
+        # La BD es la de DATABASE_URL (.../ingesta); DATABASE_NAME solo si la URL no la trae.
+        db = client.get_default_database(default=settings.DATABASE_NAME)
 
         # Crear índices requeridos
         await db.sources.create_index("url", unique=True)

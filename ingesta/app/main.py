@@ -75,6 +75,12 @@ async def get_sources():
     sources = []
     async for source in db_manager.db.sources.find():
         source["id"] = str(source["_id"])
+        # Último estado: la ejecución más reciente de su bitácora de scraping
+        last = await db_manager.db.scrape_log.find_one(
+            {"source_id": source["id"]}, sort=[("started_at", -1)])
+        if last:
+            last["status"] = "ok" if last.get("errors", 0) == 0 else "error"
+        source["last_scrape"] = last
         sources.append(source)
     return sources
 
