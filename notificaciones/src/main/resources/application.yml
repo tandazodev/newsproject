@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: 8080
 
 spring:
   config:
@@ -7,27 +7,31 @@ spring:
   application:
     name: notificaciones
   jackson:
-    # El contrato de eventos usa snake_case (event_id, article_id, ...)
+    # El contrato de eventos y las respuestas REST usan snake_case
     property-naming-strategy: SNAKE_CASE
+  datasource:
+    # En Docker llegan SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD (docker-compose.yml)
+    url: jdbc:postgresql://localhost:5432/notificaciones
+    hikari:
+      connection-timeout: 2000
+  sql:
+    init:
+      mode: always        # ejecuta schema.sql (CREATE TABLE IF NOT EXISTS)
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASS:guest}
+    connection-timeout: 3s
     listener:
       simple:
+        # Ack solo despues de que el listener termina bien (docs/eventos.md, regla 2).
         acknowledge-mode: auto
-        # Tras agotar los reintentos el mensaje se rechaza sin reencolar y
-        # RabbitMQ lo manda a la cola .dlq (ver docs/eventos.md)
-        default-requeue-rejected: false
+        # Error transitorio -> nack con requeue; la cola quorum cuenta las entregas
+        # y tras 3 manda el mensaje a su .dlq. Un mensaje invalido lanza
+        # AmqpRejectAndDontRequeueException y va directo a la .dlq.
+        default-requeue-rejected: true
         retry:
-          enabled: true
-          max-attempts: 3
-          initial-interval: 1s
-          multiplier: 2
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
+          enabled: false
+        prefetch: 10
+        missing-queues-fatal: false
