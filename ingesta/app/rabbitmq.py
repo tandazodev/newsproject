@@ -3,8 +3,8 @@ import json
 import logging
 import asyncio
 import aio_pika
-from config import settings
-from database import db_manager
+from .config import settings
+from .database import db_manager
 
 logger = logging.getLogger(__name__)
 
@@ -16,18 +16,21 @@ class RabbitMQClient:
 mq = RabbitMQClient()
 
 async def connect_to_rabbitmq():
-    """Establece conexión robusta a RabbitMQ y declara el exchange."""
+    """Establece conexión robusta a RabbitMQ y obtiene el exchange.
+
+    El exchange lo crea rabbitmq-init (infra/rabbitmq/definitions.json); aquí solo se
+    verifica que exista. Si falla, la excepción sube y main.with_retries reintenta.
+    """
+    connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     try:
-        mq.connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
-        mq.channel = await mq.connection.channel()
-        mq.exchange = await mq.channel.declare_exchange(
-            settings.EXCHANGE_NAME, 
-            aio_pika.ExchangeType.TOPIC,
-            durable=True
-        )
-        logger.info("Conectado a RabbitMQ exitosamente.")
+        channel = await connection.channel()
+        exchange = await channel.get_exchange(settings.EXCHANGE_NAME)
     except Exception as e:
         logger.error(f"Error conectando a RabbitMQ: {str(e)}")
+        await connection.close()
+        raise
+    mq.connection, mq.channel, mq.exchange = connection, channel, exchange
+    logger.info("Conectado a RabbitMQ exitosamente.")
 
 async def close_rabbitmq_connection():
     if mq.connection and not mq.connection.is_closed:

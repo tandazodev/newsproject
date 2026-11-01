@@ -4,10 +4,10 @@ import feedparser
 import logging
 from datetime import datetime, timezone
 from dateutil import parser as date_parser
-from config import settings
-from database import db_manager
-from utils import normalize_url, entry_text, entry_image, generate_article_id, generate_hash
-from rabbitmq import retry_pending_articles
+from .config import settings
+from .database import db_manager
+from .utils import normalize_url, entry_text, entry_image, generate_article_id, generate_hash
+from .rabbitmq import retry_pending_articles
 
 logger = logging.getLogger(__name__)
 
