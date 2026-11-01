@@ -26,6 +26,6 @@ public record ArticleClassifiedEvent(
             String imageUrl,
             String category,
             List<String> tags,
-            double score) {
+            Double score) {
     }
 }

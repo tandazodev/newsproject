@@ -217,9 +217,27 @@ async def ws_notifications(websocket: WebSocket):
 
     await upstream.close()
     if u2c in done:
-        # Notificaciones cerró la conexión: avisar al navegador para que reconecte.
+        # Notificaciones cerró la conexión: se reenvía su código y motivo (p. ej. 1008
+        # "user_id requerido (UUID)") para que el navegador sepa si reintentar.
+        code, reason = upstream_close(upstream)
         try:
-            await websocket.close(code=1013, reason="notificaciones no disponible")
+            await websocket.close(code=code, reason=reason)
         except Exception:  # noqa: BLE001 — el cliente ya pudo haberse ido
             pass
-    log("ws.closed", user_id=user_id)
+        log("ws.closed", user_id=user_id, code=code, reason=reason)
+    else:
+        log("ws.closed", user_id=user_id)
+
+
+def upstream_close(upstream):
+    """Código y motivo con que cerró Notificaciones, si se pueden reenviar al navegador.
+
+    1005, 1006 y 1015 son códigos reservados que no se envían en un frame de cierre
+    (indican cierre sin código o caída de la conexión): en ese caso, o si no hay código,
+    se responde 1013 "notificaciones no disponible" para que el navegador reconecte.
+    """
+    code = upstream.close_code
+    reason = upstream.close_reason or ""
+    if code is None or not (1000 <= code <= 1014 or 3000 <= code <= 4999) or code in (1005, 1006):
+        return 1013, "notificaciones no disponible"
+    return code, reason

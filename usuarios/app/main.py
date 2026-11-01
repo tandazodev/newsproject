@@ -78,9 +78,9 @@ async def with_retries(name, connect):
             attempt += 1
 
 
-def iso_z(value):
+def iso_z(value, timespec="seconds"):
     """Formatea un datetime aware a ISO 8601 UTC con sufijo Z."""
-    return value.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    return value.astimezone(timezone.utc).isoformat(timespec=timespec).replace("+00:00", "Z")
 
 
 def no_disponible():
@@ -349,7 +349,9 @@ async def actualizar_preferencias(user_id: uuid.UUID, body: PreferencesUpdate):
                     WHERE user_id = $1
                     RETURNING updated_at
                 """, user_id, categories, keywords, body.notifications_enabled)
-                occurred_at = iso_z(row["updated_at"])
+                # Milisegundos: dos cambios en el mismo segundo no empatan y Notificaciones
+                # puede descartar el más antiguo (docs/eventos.md, sección 5, regla 1).
+                occurred_at = iso_z(row["updated_at"], timespec="milliseconds")
                 await publicar_preferencias_actualizadas(
                     state, user_id, categories, keywords, body.notifications_enabled, occurred_at
                 )

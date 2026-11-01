@@ -96,8 +96,8 @@ RETURNING article_id
 """
 
 # Estado compartido del proceso; lo llena el arranque en segundo plano.
-state = {"pool": None, "amqp": None, "exchange": None, "model": None, "model_version": None,
-         "metrics": None}
+state = {"pool": None, "amqp": None, "channel": None, "queue": None, "exchange": None, "model": None,
+         "model_version": None, "metrics": None}
 
 
 def utc_now():
@@ -314,6 +314,9 @@ async def startup():
     state["exchange"] = await channel.get_exchange(EXCHANGE)
     queue = await channel.declare_queue(QUEUE, passive=True)
     await queue.consume(on_message)
+    # aio-pika guarda en un WeakSet las colas que restaura al reconectar: sin una
+    # referencia fuerte, el consumidor no se recupera tras reiniciar RabbitMQ.
+    state["channel"], state["queue"] = channel, queue
     state["amqp"] = connection
     log("rabbitmq.ready", queue=QUEUE)
 
@@ -345,7 +348,10 @@ async def db_ok():
 
 
 def rabbitmq_ok():
-    return state["amqp"] is not None and not state["amqp"].is_closed
+    # Igual que Usuarios: mientras connect_robust reconecta, la conexión no está lista.
+    amqp = state["amqp"]
+    return (amqp is not None and not amqp.is_closed
+            and amqp.connected.is_set() and not amqp.reconnecting)
 
 
 @app.get("/health")
