@@ -1,0 +1,142 @@
+{
+  "algorithm": "LogisticRegression",
+  "created_at": "2026-11-01T19:18:20Z",
+  "sklearn_version": "1.5.2",
+  "train_size": 1543,
+  "test_size": 140,
+  "test_source": "test_set.csv (revisado a mano)",
+  "cv_f1_macro": {
+    "MultinomialNB": {
+      "mean": 0.5816,
+      "std": 0.0138
+    },
+    "LogisticRegression": {
+      "mean": 0.8253,
+      "std": 0.0164
+    }
+  },
+  "precision_macro": 0.8694,
+  "recall_macro": 0.8598,
+  "f1_macro": 0.8582,
+  "accuracy": 0.8571,
+  "per_category": {
+    "cultura": {
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571,
+      "support": 24
+    },
+    "deportes": {
+      "precision": 0.8636,
+      "recall": 0.95,
+      "f1": 0.9048,
+      "support": 20
+    },
+    "economia": {
+      "precision": 0.7391,
+      "recall": 0.8095,
+      "f1": 0.7727,
+      "support": 21
+    },
+    "internacional": {
+      "precision": 0.9444,
+      "recall": 0.85,
+      "f1": 0.8947,
+      "support": 20
+    },
+    "politica": {
+      "precision": 0.76,
+      "recall": 0.95,
+      "f1": 0.8444,
+      "support": 20
+    },
+    "salud": {
+      "precision": 0.9286,
+      "recall": 0.7647,
+      "f1": 0.8387,
+      "support": 17
+    },
+    "tecnologia": {
+      "precision": 0.85,
+      "recall": 0.9444,
+      "f1": 0.8947,
+      "support": 18
+    }
+  },
+  "confusion_matrix": {
+    "labels": [
+      "cultura",
+      "deportes",
+      "economia",
+      "internacional",
+      "politica",
+      "salud",
+      "tecnologia"
+    ],
+    "matrix": [
+      [
+        18,
+        3,
+        2,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        19,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        17,
+        1,
+        2,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        1,
+        17,
+        2,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        19,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        2,
+        13,
+        1
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        17
+      ]
+    ]
+  }
+}

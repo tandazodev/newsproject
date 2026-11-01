@@ -5,3 +5,5 @@ aio-pika==9.4.3
 # Entrenar con estas mismas versiones para que el contenedor pueda cargar model.joblib.
 scikit-learn==1.5.2
 joblib==1.4.2
+numpy==2.4.6
+scipy==1.17.1
