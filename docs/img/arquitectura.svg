@@ -1,30 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1570" viewBox="0 0 1600 1570" font-family="Noto Sans, DejaVu Sans, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1745" viewBox="0 0 1600 1745" font-family="Noto Sans, DejaVu Sans, Helvetica, Arial, sans-serif">
 <defs>
-<marker id="a-7c3aed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker>
-<marker id="s-7c3aed" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker>
-<marker id="a-4b5563" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4b5563"/></marker>
-<marker id="s-4b5563" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4b5563"/></marker>
-<marker id="a-9ca3af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9ca3af"/></marker>
-<marker id="s-9ca3af" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9ca3af"/></marker>
-<marker id="a-ea580c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ea580c"/></marker>
-<marker id="s-ea580c" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ea580c"/></marker>
 <marker id="a-059669" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#059669"/></marker>
 <marker id="s-059669" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#059669"/></marker>
 <marker id="a-0891b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0891b2"/></marker>
 <marker id="s-0891b2" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0891b2"/></marker>
 <marker id="a-2563eb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
 <marker id="s-2563eb" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+<marker id="a-4b5563" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4b5563"/></marker>
+<marker id="s-4b5563" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4b5563"/></marker>
+<marker id="a-7c3aed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker>
+<marker id="s-7c3aed" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker>
+<marker id="a-9ca3af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9ca3af"/></marker>
+<marker id="s-9ca3af" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9ca3af"/></marker>
+<marker id="a-ea580c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ea580c"/></marker>
+<marker id="s-ea580c" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ea580c"/></marker>
 </defs>
-<rect width="1600" height="1570" fill="#ffffff"/>
+<rect width="1600" height="1745" fill="#ffffff"/>
 <text x="40" y="42" font-size="22" fill="#1f2937" font-weight="bold" text-anchor="start">Agregador de noticias · arquitectura de microservicios</text>
-<text x="40" y="64" font-size="13" fill="#6b7280" font-weight="normal" text-anchor="start">9 contenedores en la red newsproject-net · los 5 servicios de negocio solo se comunican por eventos en RabbitMQ</text>
+<text x="40" y="64" font-size="13" fill="#6b7280" font-weight="normal" text-anchor="start">9 contenedores en la red newsproject-net · los 5 servicios de negocio solo se comunican por eventos en RabbitMQ · cada flecha indica su tipo de comunicación</text>
 <rect x="40" y="90" width="340" height="110" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="60" y="118" font-size="12" fill="#1f2937" font-weight="bold" text-anchor="start">Navegador</text>
 <text x="60" y="137" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">usuario normal o administrador</text>
 <text x="60" y="156" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">token JWT en localStorage (8 h)</text>
 <text x="60" y="175" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">latencia = llegada − ingested_at</text>
 <rect x="560" y="90" width="440" height="110" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
-<text x="580" y="118" font-size="12" fill="#1f2937" font-weight="bold" text-anchor="start">Frontend · React + Vite servido por Nginx</text>
+<text x="580" y="118" font-size="12" fill="#1f2937" font-weight="bold" text-anchor="start">Frontend · React + Vite · Nginx (proxy inverso)</text>
 <text x="580" y="137" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">contenedor frontend · :3000 (host)</text>
 <text x="580" y="156" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">Login · Registro · Feed (bandeja) · Buscar · Fuentes</text>
 <text x="580" y="175" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">Preferencias · Panel (solo admin)</text>
@@ -35,30 +35,41 @@
 <text x="1280" y="175" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">imágenes de portada</text>
 <text x="1280" y="194" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">(no se descargan ni guardan)</text>
 <path d="M380,130 L558,130" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
-<rect x="438" y="106.5" width="65" height="15.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="470" y="117.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="middle">HTTP :3000</text>
+<rect x="422" y="94" width="96" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="470.0" y="104.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · HTTP</text>
+<rect x="438" y="111.5" width="65" height="15.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="470" y="122.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="middle">HTTP :3000</text>
 <rect x="400" y="140.5" width="139" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="470" y="150.0" font-size="9.5" fill="#4b5563" font-weight="bold" text-anchor="middle">/api/* y /ws/* con el JWT</text>
 <path d="M558,182 L382,182" fill="none" stroke="#4b5563" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#a-4b5563)"/>
 <rect x="398" y="186.5" width="144" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="470" y="196.0" font-size="9.5" fill="#4b5563" font-weight="bold" text-anchor="middle">WebSocket: alertas en vivo</text>
+<rect x="400" y="206" width="141" height="14" rx="7" fill="#ffffff" stroke="#a16207" stroke-width="1.2"/>
+<text x="470.0" y="216.5" font-size="8.5" fill="#a16207" font-weight="bold" text-anchor="middle">TIEMPO REAL · WebSocket</text>
 <path d="M210,90 L210,80 L1410,80 L1410,88" fill="none" stroke="#0891b2" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#a-0891b2)"/>
 <rect x="898" y="66" width="404" height="15" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="1100" y="76" font-size="10" fill="#0891b2" font-weight="bold" text-anchor="middle">imágenes de portada (image_url): el navegador las pide directo al medio</text>
-<rect x="40" y="290" width="1140" height="120" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
-<text x="60" y="318" font-size="12" fill="#1f2937" font-weight="bold" text-anchor="start">API Gateway · FastAPI + httpx + websockets · contenedor gateway · :8080 (host) · sin BD</text>
+<rect x="1302" y="66" width="96" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="1350.0" y="76.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · HTTP</text>
+<rect x="40" y="290" width="1140" height="132" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
+<text x="60" y="318" font-size="12" fill="#1f2937" font-weight="bold" text-anchor="start">API Gateway (middleware de entrada) · FastAPI + httpx + websockets · contenedor gateway · :8080 (host) · sin BD</text>
 <text x="60" y="339" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">Valida el JWT (HS256, JWT_SECRET) y los permisos por rol (arquitectura 7.1): sin token 401 · rol insuficiente 403</text>
 <text x="60" y="360" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">Reenvía X-User-Id / X-User-Role al servicio y descarta los que mande el cliente · 503 solo en la ruta del servicio caído</text>
 <text x="60" y="381" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">GET /api/status (público) y GET /api/admin/status (solo admin): /health de cada servicio + colas y DLQ</text>
+<text x="60" y="402" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">Modo distribuido (4 PCs): llega a cada servicio por IP y añade X-Internal-Token; sin él responden 403</text>
 <path d="M700,200 L700,288" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
 <rect x="568" y="225.5" width="129" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="694" y="236.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="end">REST /api/*</text>
 <text x="694" y="249.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="end">Nginx → gateway:8000</text>
 <text x="694" y="263.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="end">Authorization: Bearer</text>
+<rect x="570" y="210" width="124" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="632.0" y="220.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · REST/HTTP</text>
 <path d="M870,202 L870,288" fill="none" stroke="#4b5563" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#a-4b5563)" marker-start="url(#s-4b5563)"/>
 <rect x="875" y="225.5" width="177" height="29.0" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="878" y="236.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">WebSocket</text>
 <text x="878" y="249.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">/ws/notifications?token=&lt;jwt&gt;</text>
+<rect x="878" y="210" width="141" height="14" rx="7" fill="#ffffff" stroke="#a16207" stroke-width="1.2"/>
+<text x="948.4" y="220.5" font-size="8.5" fill="#a16207" font-weight="bold" text-anchor="middle">TIEMPO REAL · WebSocket</text>
 <rect x="40" y="520" width="280" height="280" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
 <text x="180.0" y="548" font-size="15" fill="#1f2937" font-weight="bold" text-anchor="middle">Usuarios</text>
 <text x="180.0" y="566" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="middle">Ariana · un contenedor con backend + BD</text>
@@ -67,7 +78,7 @@
 <text x="180.0" y="622" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">registro (bcrypt) y login (JWT)</text>
 <text x="180.0" y="644" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">roles admin/usuario · preferencias</text>
 <path d="M180.0,670 L180.0,698" fill="none" stroke="#6b7280" stroke-width="1.5" marker-end="url(#a-6b7280)"/>
-<text x="186.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost</text>
+<text x="186.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost · local</text>
 <rect x="55" y="700" width="250" height="82" rx="8" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="180.0" y="726" font-size="11.5" fill="#1f2937" font-weight="bold" text-anchor="middle">PostgreSQL</text>
 <text x="180.0" y="748" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">users · preferences</text>
@@ -79,7 +90,7 @@
 <text x="485.0" y="622" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">cruza artículos × preferencias</text>
 <text x="485.0" y="644" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">alertas, relleno y WebSocket</text>
 <path d="M485.0,670 L485.0,698" fill="none" stroke="#6b7280" stroke-width="1.5" marker-end="url(#a-6b7280)"/>
-<text x="491.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost</text>
+<text x="491.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost · local</text>
 <rect x="360" y="700" width="250" height="82" rx="8" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="485.0" y="726" font-size="11.5" fill="#1f2937" font-weight="bold" text-anchor="middle">PostgreSQL</text>
 <text x="485.0" y="748" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">prefs · alertas · artículos (7 días)</text>
@@ -91,7 +102,7 @@
 <text x="790.0" y="622" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">indexa los artículos clasificados</text>
 <text x="790.0" y="644" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">búsqueda con y sin tildes</text>
 <path d="M790.0,670 L790.0,698" fill="none" stroke="#6b7280" stroke-width="1.5" marker-end="url(#a-6b7280)"/>
-<text x="796.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost</text>
+<text x="796.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost · local</text>
 <rect x="665" y="700" width="250" height="82" rx="8" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="790.0" y="726" font-size="11.5" fill="#1f2937" font-weight="bold" text-anchor="middle">MongoDB</text>
 <text x="790.0" y="748" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">articles + índice de texto</text>
@@ -103,7 +114,7 @@
 <text x="1095.0" y="622" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">TF-IDF + regresión logística</text>
 <text x="1095.0" y="644" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">categoría · tags · score</text>
 <path d="M1095.0,670 L1095.0,698" fill="none" stroke="#6b7280" stroke-width="1.5" marker-end="url(#a-6b7280)"/>
-<text x="1101.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost</text>
+<text x="1101.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost · local</text>
 <rect x="970" y="700" width="250" height="82" rx="8" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="1095.0" y="726" font-size="11.5" fill="#1f2937" font-weight="bold" text-anchor="middle">PostgreSQL</text>
 <text x="1095.0" y="748" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">modelo · métricas · artículos</text>
@@ -115,81 +126,111 @@
 <text x="1400.0" y="622" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">lee RSS cada 5 min y limpia HTML</text>
 <text x="1400.0" y="644" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">dedup. por hash · id UUID v5</text>
 <path d="M1400.0,670 L1400.0,698" fill="none" stroke="#6b7280" stroke-width="1.5" marker-end="url(#a-6b7280)"/>
-<text x="1406.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost</text>
+<text x="1406.0" y="688" font-size="9.5" fill="#6b7280" font-weight="normal" text-anchor="start">localhost · local</text>
 <rect x="1275" y="700" width="250" height="82" rx="8" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="1400.0" y="726" font-size="11.5" fill="#1f2937" font-weight="bold" text-anchor="middle">MongoDB</text>
 <text x="1400.0" y="748" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="middle">fuentes · artículos · bitácora</text>
-<path d="M150,410 L150,518" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
-<rect x="153" y="429.5" width="135" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="156" y="440.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/users · /api/auth</text>
-<text x="156" y="453.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">registro · login · /me</text>
-<text x="156" y="467.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">preferencias (PUT)</text>
-<path d="M420,410 L420,518" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
-<rect x="423" y="429.5" width="129" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="426" y="440.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/notifications</text>
-<text x="426" y="453.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">listar · ?unread=true</text>
-<text x="426" y="467.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">PATCH /{id}/read</text>
-<path d="M585,518 L585,412" fill="none" stroke="#4b5563" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#a-4b5563)" marker-start="url(#s-4b5563)"/>
-<rect x="587" y="459.5" width="106" height="29.0" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="590" y="470.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">WS /ws?user_id=</text>
-<text x="590" y="483.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">(user_id del JWT)</text>
-<path d="M740,410 L740,518" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
-<rect x="743" y="429.5" width="112" height="29.0" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="746" y="440.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/search</text>
-<text x="746" y="453.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">/api/articles/{id}</text>
-<path d="M1015,410 L1015,518" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
-<rect x="1018" y="429.5" width="94" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="1021" y="440.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/categories</text>
-<text x="1021" y="453.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">/api/classify</text>
-<text x="1021" y="467.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">/api/model</text>
+<path d="M150,422 L150,518" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
+<rect x="156" y="430" width="124" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="218.0" y="440.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · REST/HTTP</text>
+<rect x="153" y="446.5" width="135" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="156" y="457.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/users · /api/auth</text>
+<text x="156" y="470.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">registro · login · /me</text>
+<text x="156" y="484.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">preferencias (PUT)</text>
+<path d="M420,422 L420,518" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
+<rect x="426" y="430" width="124" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="488.0" y="440.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · REST/HTTP</text>
+<rect x="423" y="446.5" width="129" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="426" y="457.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/notifications</text>
+<text x="426" y="470.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">listar · ?unread=true</text>
+<text x="426" y="484.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">PATCH /{id}/read</text>
+<path d="M585,518 L585,424" fill="none" stroke="#4b5563" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#a-4b5563)" marker-start="url(#s-4b5563)"/>
+<rect x="590" y="468" width="141" height="14" rx="7" fill="#ffffff" stroke="#a16207" stroke-width="1.2"/>
+<text x="660.4" y="478.5" font-size="8.5" fill="#a16207" font-weight="bold" text-anchor="middle">TIEMPO REAL · WebSocket</text>
+<rect x="587" y="484.5" width="106" height="29.0" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="590" y="495.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">WS /ws?user_id=</text>
+<text x="590" y="508.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">(user_id del JWT)</text>
+<path d="M740,422 L740,518" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
+<rect x="746" y="430" width="124" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="808.0" y="440.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · REST/HTTP</text>
+<rect x="743" y="446.5" width="112" height="29.0" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="746" y="457.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/search</text>
+<text x="746" y="470.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">/api/articles/{id}</text>
+<path d="M1015,422 L1015,518" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
+<rect x="1021" y="430" width="124" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="1083.0" y="440.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · REST/HTTP</text>
+<rect x="1018" y="446.5" width="94" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="1021" y="457.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/categories</text>
+<text x="1021" y="470.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">/api/classify</text>
+<text x="1021" y="484.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">/api/model</text>
 <path d="M1180,372 L1330,372 L1330,518" fill="none" stroke="#4b5563" stroke-width="2" marker-end="url(#a-4b5563)"/>
-<rect x="1335" y="427.5" width="124" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="1338" y="438.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/sources</text>
-<text x="1338" y="451.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">listar: todos</text>
-<text x="1338" y="465.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">alta y scrape: admin</text>
+<rect x="1338" y="430" width="124" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="1400.0" y="440.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · REST/HTTP</text>
+<rect x="1335" y="446.5" width="124" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="1338" y="457.0" font-size="10.5" fill="#4b5563" font-weight="bold" text-anchor="start">/api/sources</text>
+<text x="1338" y="470.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">listar: todos</text>
+<text x="1338" y="484.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">alta y scrape: admin</text>
 <path d="M1480,518 L1480,252" fill="none" stroke="#0891b2" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#a-0891b2)"/>
-<rect x="1366" y="279.5" width="112" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="1475" y="290.0" font-size="10.5" fill="#0891b2" font-weight="bold" text-anchor="end">GET feeds RSS</text>
-<text x="1475" y="303.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="end">httpx · cada 5 min</text>
-<text x="1475" y="317.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="end">y manual (admin)</text>
-<path d="M1180,398 L1247,398 L1247,958" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#a-7c3aed)"/>
+<rect x="1379" y="266" width="96" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="1427.0" y="276.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · HTTP</text>
+<rect x="1366" y="282.5" width="112" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="1475" y="293.0" font-size="10.5" fill="#0891b2" font-weight="bold" text-anchor="end">GET feeds RSS</text>
+<text x="1475" y="306.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="end">httpx · cada 5 min</text>
+<text x="1475" y="320.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="end">y manual (admin)</text>
+<path d="M1180,405 L1247,405 L1247,958" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#a-7c3aed)"/>
 <path d="M180,800 L180,958" fill="none" stroke="#059669" stroke-width="2.5" marker-end="url(#a-059669)"/>
+<rect x="186" y="811" width="102" height="14" rx="7" fill="#ffffff" stroke="#be185d" stroke-width="1.2"/>
+<text x="236.8" y="821.5" font-size="8.5" fill="#be185d" font-weight="bold" text-anchor="middle">ASÍNCRONA · AMQP</text>
 <rect x="183" y="827.5" width="194" height="29.0" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="186" y="838.0" font-size="10.5" fill="#059669" font-weight="bold" text-anchor="start">publica user.preferences.updated</text>
 <text x="186" y="851.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">al guardar preferencias</text>
 <path d="M420,958 L420,802" fill="none" stroke="#ea580c" stroke-width="2.5" marker-end="url(#a-ea580c)"/>
+<rect x="312" y="881" width="102" height="14" rx="7" fill="#ffffff" stroke="#be185d" stroke-width="1.2"/>
+<text x="363.2" y="891.5" font-size="8.5" fill="#be185d" font-weight="bold" text-anchor="middle">ASÍNCRONA · AMQP</text>
 <rect x="217" y="897.5" width="200" height="29.0" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="414" y="908.0" font-size="10.5" fill="#ea580c" font-weight="bold" text-anchor="end">consume</text>
 <text x="414" y="921.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="end">notificaciones.article-classified</text>
 <path d="M560,958 L560,802" fill="none" stroke="#059669" stroke-width="2.5" marker-end="url(#a-059669)"/>
+<rect x="566" y="869" width="102" height="14" rx="7" fill="#ffffff" stroke="#be185d" stroke-width="1.2"/>
+<text x="616.8" y="879.5" font-size="8.5" fill="#be185d" font-weight="bold" text-anchor="middle">ASÍNCRONA · AMQP</text>
 <rect x="563" y="885.5" width="124" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="566" y="896.0" font-size="10.5" fill="#059669" font-weight="bold" text-anchor="start">consume</text>
 <text x="566" y="909.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">notificaciones.user-</text>
 <text x="566" y="923.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">preferences-updated</text>
 <path d="M780,958 L780,802" fill="none" stroke="#ea580c" stroke-width="2.5" marker-end="url(#a-ea580c)"/>
+<rect x="786" y="839" width="102" height="14" rx="7" fill="#ffffff" stroke="#be185d" stroke-width="1.2"/>
+<text x="836.8" y="849.5" font-size="8.5" fill="#be185d" font-weight="bold" text-anchor="middle">ASÍNCRONA · AMQP</text>
 <rect x="783" y="855.5" width="165" height="29.0" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="786" y="866.0" font-size="10.5" fill="#ea580c" font-weight="bold" text-anchor="start">consume</text>
 <text x="786" y="879.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">busqueda.article-classified</text>
 <path d="M1015,958 L1015,802" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#a-2563eb)"/>
+<rect x="1021" y="811" width="102" height="14" rx="7" fill="#ffffff" stroke="#be185d" stroke-width="1.2"/>
+<text x="1071.8" y="821.5" font-size="8.5" fill="#be185d" font-weight="bold" text-anchor="middle">ASÍNCRONA · AMQP</text>
 <rect x="1018" y="827.5" width="100" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="1021" y="838.0" font-size="10.5" fill="#2563eb" font-weight="bold" text-anchor="start">consume</text>
 <text x="1021" y="851.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">clasificacion.</text>
 <text x="1021" y="865.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">article-ingested</text>
 <path d="M1175,800 L1175,958" fill="none" stroke="#ea580c" stroke-width="2.5" marker-end="url(#a-ea580c)"/>
+<rect x="1067" y="881" width="102" height="14" rx="7" fill="#ffffff" stroke="#be185d" stroke-width="1.2"/>
+<text x="1118.2" y="891.5" font-size="8.5" fill="#be185d" font-weight="bold" text-anchor="middle">ASÍNCRONA · AMQP</text>
 <rect x="1060" y="897.5" width="112" height="29.0" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="1169" y="908.0" font-size="10.5" fill="#ea580c" font-weight="bold" text-anchor="end">publica</text>
 <text x="1169" y="921.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="end">article.classified</text>
+<rect x="1253" y="819" width="96" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="1301.0" y="829.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · HTTP</text>
 <rect x="1250" y="835.5" width="135" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="1253" y="846.0" font-size="10.5" fill="#7c3aed" font-weight="bold" text-anchor="start">API de gestión :15672</text>
 <text x="1253" y="859.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">usuario monitor</text>
 <text x="1253" y="873.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">(solo lectura) → panel</text>
 <path d="M1410,800 L1410,958" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#a-2563eb)"/>
+<rect x="1416" y="811" width="102" height="14" rx="7" fill="#ffffff" stroke="#be185d" stroke-width="1.2"/>
+<text x="1466.8" y="821.5" font-size="8.5" fill="#be185d" font-weight="bold" text-anchor="middle">ASÍNCRONA · AMQP</text>
 <rect x="1413" y="827.5" width="100" height="42.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="1416" y="838.0" font-size="10.5" fill="#2563eb" font-weight="bold" text-anchor="start">publica</text>
 <text x="1416" y="851.5" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">article.ingested</text>
 <text x="1416" y="865.0" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">(con source_id)</text>
 <rect x="40" y="960" width="1520" height="370" rx="10" fill="#fafafa" stroke="#d1d5db" stroke-width="2"/>
-<text x="60" y="990" font-size="15" fill="#1f2937" font-weight="bold" text-anchor="start">RabbitMQ 3.13 · contenedor rabbitmq · AMQP :5672 · gestión :15672 (panel web y API)</text>
+<text x="60" y="990" font-size="15" fill="#1f2937" font-weight="bold" text-anchor="start">RabbitMQ 3.13 · middleware orientado a mensajes (MOM) · contenedor rabbitmq · AMQP :5672 · gestión :15672 (panel web y API)</text>
 <text x="60" y="1009" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">Publicar: JSON persistente con sobre común (event_id, event_type, occurred_at, version, payload). Consumir: prefetch 10 · ack manual después de guardar · idempotencia por article_id / user_id.</text>
 <rect x="70" y="1030" width="330" height="270" rx="10" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="235" y="1080" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="middle">newsproject.events</text>
@@ -207,8 +248,8 @@
 <rect x="427" y="1048" width="146" height="15" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="500" y="1058" font-size="10" fill="#2563eb" font-weight="bold" text-anchor="middle">binding: article.ingested</text>
 <path d="M1030,1065 L1178,1065" fill="none" stroke="#9ca3af" stroke-width="2" stroke-dasharray="2 4" marker-end="url(#a-9ca3af)"/>
-<rect x="1072" y="1048.5" width="65" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="1104" y="1058.0" font-size="9.5" fill="#6b7280" font-weight="bold" text-anchor="middle">dead-letter</text>
+<rect x="1045" y="1048.5" width="118" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="1104" y="1058.0" font-size="9.5" fill="#6b7280" font-weight="bold" text-anchor="middle">dead-letter (interno)</text>
 <rect x="600" y="1105" width="430" height="50" rx="6" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
 <rect x="600" y="1105" width="7" height="50" rx="2" fill="#ea580c"/>
 <text x="620" y="1127" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="start">busqueda.article-classified</text>
@@ -217,8 +258,8 @@
 <rect x="421" y="1113" width="157" height="15" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="500" y="1123" font-size="10" fill="#ea580c" font-weight="bold" text-anchor="middle">binding: article.classified</text>
 <path d="M1030,1130 L1178,1130" fill="none" stroke="#9ca3af" stroke-width="2" stroke-dasharray="2 4" marker-end="url(#a-9ca3af)"/>
-<rect x="1072" y="1113.5" width="65" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="1104" y="1123.0" font-size="9.5" fill="#6b7280" font-weight="bold" text-anchor="middle">dead-letter</text>
+<rect x="1045" y="1113.5" width="118" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="1104" y="1123.0" font-size="9.5" fill="#6b7280" font-weight="bold" text-anchor="middle">dead-letter (interno)</text>
 <rect x="600" y="1170" width="430" height="50" rx="6" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
 <rect x="600" y="1170" width="7" height="50" rx="2" fill="#ea580c"/>
 <text x="620" y="1192" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="start">notificaciones.article-classified</text>
@@ -227,8 +268,8 @@
 <rect x="421" y="1178" width="157" height="15" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="500" y="1188" font-size="10" fill="#ea580c" font-weight="bold" text-anchor="middle">binding: article.classified</text>
 <path d="M1030,1195 L1178,1195" fill="none" stroke="#9ca3af" stroke-width="2" stroke-dasharray="2 4" marker-end="url(#a-9ca3af)"/>
-<rect x="1072" y="1178.5" width="65" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="1104" y="1188.0" font-size="9.5" fill="#6b7280" font-weight="bold" text-anchor="middle">dead-letter</text>
+<rect x="1045" y="1178.5" width="118" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="1104" y="1188.0" font-size="9.5" fill="#6b7280" font-weight="bold" text-anchor="middle">dead-letter (interno)</text>
 <rect x="600" y="1235" width="430" height="50" rx="6" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
 <rect x="600" y="1235" width="7" height="50" rx="2" fill="#059669"/>
 <text x="620" y="1257" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="start">notificaciones.user-preferences-updated</text>
@@ -237,8 +278,8 @@
 <rect x="405" y="1243" width="191" height="15" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="500" y="1253" font-size="10" fill="#059669" font-weight="bold" text-anchor="middle">binding: user.preferences.updated</text>
 <path d="M1030,1260 L1178,1260" fill="none" stroke="#9ca3af" stroke-width="2" stroke-dasharray="2 4" marker-end="url(#a-9ca3af)"/>
-<rect x="1072" y="1243.5" width="65" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
-<text x="1104" y="1253.0" font-size="9.5" fill="#6b7280" font-weight="bold" text-anchor="middle">dead-letter</text>
+<rect x="1045" y="1243.5" width="118" height="14.5" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="1104" y="1253.0" font-size="9.5" fill="#6b7280" font-weight="bold" text-anchor="middle">dead-letter (interno)</text>
 <rect x="1180" y="1030" width="350" height="270" rx="10" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="1355" y="1062" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="middle">newsproject.dlx</text>
 <text x="1355" y="1084" font-size="13" fill="#1f2937" font-weight="normal" text-anchor="middle">exchange direct → &lt;cola&gt;.dlq</text>
@@ -257,6 +298,8 @@
 <path d="M230,1370 L230,1332" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#a-7c3aed)"/>
 <rect x="233" y="1346" width="264" height="15" fill="#ffffff" fill-opacity="0.92" rx="3"/>
 <text x="236" y="1356" font-size="10" fill="#7c3aed" font-weight="bold" text-anchor="start">POST /api/definitions · PUT /api/users/monitor</text>
+<rect x="510" y="1346" width="96" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="558.0" y="1356.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · HTTP</text>
 <path d="M480,1380 L524,1380" fill="none" stroke="#2563eb" stroke-width="2.5"/>
 <text x="534" y="1384" font-size="11.5" fill="#1f2937" font-weight="normal" text-anchor="start">article.ingested (Ingesta → Clasificación)</text>
 <path d="M1020,1380 L1064,1380" fill="none" stroke="#ea580c" stroke-width="2.5"/>
@@ -277,4 +320,25 @@
 <text x="480" y="1510" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">Ningún servicio de negocio llama a otro por REST; el frontend solo habla con el gateway (vía Nginx).</text>
 <text x="480" y="1528" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">Cada servicio expone GET /health con formato común (checks.db, checks.rabbitmq, details); su BD solo escucha en localhost.</text>
 <text x="480" y="1546" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">Fuente editable: docs/img/arquitectura.svg · contrato: docs/eventos.md y docs/arquitectura.md (secciones 5 a 7).</text>
+<rect x="40" y="1580" width="1520" height="140" rx="10" fill="#fafafa" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="60" y="1606" font-size="14" fill="#1f2937" font-weight="bold" text-anchor="start">Tipos de comunicación (etiqueta sobre cada flecha)</text>
+<rect x="60" y="1624" width="124" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="122.0" y="1634.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · REST/HTTP</text>
+<text x="265" y="1634" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">petición-respuesta HTTP/JSON: quien llama espera la respuesta (navegador → Nginx → gateway → servicio)</text>
+<rect x="810" y="1624" width="96" height="14" rx="7" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+<text x="858.0" y="1634.5" font-size="8.5" fill="#334155" font-weight="bold" text-anchor="middle">SÍNCRONA · HTTP</text>
+<text x="1015" y="1634" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">petición-respuesta fuera del flujo de negocio: página, feeds RSS, imágenes, gestión de RabbitMQ</text>
+<rect x="60" y="1648" width="102" height="14" rx="7" fill="#ffffff" stroke="#be185d" stroke-width="1.2"/>
+<text x="110.8" y="1658.5" font-size="8.5" fill="#be185d" font-weight="bold" text-anchor="middle">ASÍNCRONA · AMQP</text>
+<text x="265" y="1658" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">eventos vía RabbitMQ (middleware orientado a mensajes): el emisor no espera al receptor</text>
+<rect x="810" y="1648" width="141" height="14" rx="7" fill="#ffffff" stroke="#a16207" stroke-width="1.2"/>
+<text x="880.4" y="1658.5" font-size="8.5" fill="#a16207" font-weight="bold" text-anchor="middle">TIEMPO REAL · WebSocket</text>
+<text x="1015" y="1658" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">conexión persistente y bidireccional: Notificaciones empuja cada alerta al navegador sin que la pida</text>
+<rect x="60" y="1672" width="124" height="14" rx="7" fill="#ffffff" stroke="#6b7280" stroke-width="1.2"/>
+<text x="122.0" y="1682.5" font-size="8.5" fill="#6b7280" font-weight="bold" text-anchor="middle">LOCAL · driver de BD</text>
+<text x="265" y="1682" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">cada servicio con su BD dentro del mismo contenedor (localhost); ningún otro servicio llega a ella</text>
+<rect x="810" y="1672" width="113" height="14" rx="7" fill="#ffffff" stroke="#6b7280" stroke-width="1.2"/>
+<text x="866.4" y="1682.5" font-size="8.5" fill="#6b7280" font-weight="bold" text-anchor="middle">INTERNA DEL BROKER</text>
+<text x="1015" y="1682" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">movimientos dentro de RabbitMQ: bindings del exchange a las colas y dead-letter a las .dlq</text>
+<text x="60" y="1710" font-size="10.5" fill="#6b7280" font-weight="normal" text-anchor="start">Middleware: Nginx (proxy inverso), API Gateway (autenticación, permisos y enrutamiento) y RabbitMQ (mensajería asíncrona). Modo distribuido en 4 PCs: docs/despliegue-distribuido.md.</text>
 </svg>

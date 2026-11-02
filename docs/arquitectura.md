@@ -29,6 +29,15 @@ El diagrama muestra los 9 contenedores y **cada flecha lleva su detalle** (ruta,
 - **Gateway → servicios (gris):** valida el JWT y los permisos (sección 7.1) y enruta por prefijo; cada flecha indica las rutas de ese servicio. Con Notificaciones además mantiene el WebSocket interno (`/ws?user_id=` tomado del token). Para el panel del administrador consulta la API de gestión de RabbitMQ con un usuario de solo monitoreo (morado).
 - **Servicios ↔ RabbitMQ (colores por evento):** flecha hacia RabbitMQ = el servicio publica en `newsproject.events`; desde RabbitMQ = consume su cola (prefetch 10, `ack` manual). Dentro de RabbitMQ, cada *binding* lleva el evento a su cola y un mensaje inválido o que falla 3 veces pasa a su `.dlq` por `newsproject.dlx`.
 - **Cada caja de servicio** es un contenedor con su backend y su BD, que solo escucha en `localhost`. Ingesta es el único que sale a internet (feeds RSS cada 5 minutos); `rabbitmq-init` carga la topología y crea el usuario de monitoreo al arrancar.
+- **Tipo de comunicación:** cada flecha lleva además una etiqueta con su tipo: **síncrona REST/HTTP** (petición-respuesta, a través de Nginx y el gateway), **síncrona HTTP** fuera del flujo de negocio (feeds RSS, imágenes, API de gestión de RabbitMQ), **asíncrona AMQP** (eventos por RabbitMQ, el middleware orientado a mensajes: el emisor no espera al receptor), **tiempo real WebSocket** (el servidor empuja las alertas), **local** (servicio y su BD en el mismo contenedor) e **interna del broker** (bindings y dead-letter). Los tres middleware son Nginx (proxy inverso), el API Gateway y RabbitMQ.
+
+### 2.1 Diagrama de componentes (UML)
+
+![Diagrama de componentes UML del Agregador de Noticias](img/uml-componentes.png)
+
+La misma arquitectura en notación UML de componentes: cada componente lleva su estereotipo (`«microservicio»`, `«middleware orientado a mensajes (MOM)»`, `«componente · middleware (API Gateway)»`…), cada interfaz que ofrece se dibuja como un círculo (*lollipop*) y cada flecha punteada es una dependencia de quien usa a quien ofrece, con su estereotipo (`«REST»`, `«WebSocket»`, `«publica»`, `«consume»`, `«HTTP»`) y el color de su tipo de comunicación. Por eso `«publica»` y `«consume»` apuntan ambas a RabbitMQ: los dos servicios dependen del broker, aunque el dato vaya en sentidos opuestos. Las notas resumen el reparto del modo distribuido (sección 8.1) y las reglas de comunicación.
+
+Fuente editable: [`img/uml-componentes.svg`](img/uml-componentes.svg), generada con `img/genera_uml.py`. **Los dos diagramas describen el mismo sistema:** si cambia un servicio, una ruta, un evento o un tipo de comunicación, actualiza `genera_arquitectura.py` y `genera_uml.py` y vuelve a exportar los dos PNG (el comando está al inicio de cada script).
 
 ## 3. Microservicios, bases de datos y responsables
 
@@ -497,6 +506,8 @@ newsproject/
 │   ├── arquitectura.md           (este documento)
 │   ├── eventos.md                (contrato de eventos, sección 5)
 │   ├── img/arquitectura.png      (diagrama; fuente editable arquitectura.svg y genera_arquitectura.py)
+│   ├── img/uml-componentes.png   (diagrama de componentes UML; fuente uml-componentes.svg y genera_uml.py)
+│   ├── despliegue-distribuido.md (modo distribuido en 4 PCs)
 │   ├── capturas/                 (pantallas de la app para el README)
 │   └── declaratoria-ia.pdf
 ├── infra/

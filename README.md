@@ -9,6 +9,12 @@ Agregador de noticias con microservicios (Sistemas Distribuidos, UNL). Ingesta l
 
 *Cada flecha indica su ruta, evento o cola. Fuente editable: [`docs/img/arquitectura.svg`](docs/img/arquitectura.svg).*
 
+Cada flecha indica también su **tipo de comunicación**: síncrona (REST/HTTP), asíncrona (eventos AMQP por RabbitMQ, el middleware de mensajería), en tiempo real (WebSocket) o local (servicio y su BD). La misma arquitectura en notación UML, como diagrama de componentes con interfaces y dependencias:
+
+![Diagrama de componentes UML](docs/img/uml-componentes.png)
+
+*Fuente editable: [`docs/img/uml-componentes.svg`](docs/img/uml-componentes.svg). Los dos diagramas se generan con `docs/img/genera_arquitectura.py` y `docs/img/genera_uml.py`; si cambia la arquitectura, se actualizan ambos.*
+
 ## Qué hace
 
 - **Cuentas:** registro con correo, contraseña, nombres, apellidos y username; inicio de sesión con JWT. Dos roles: **administrador** (agrega fuentes, las scrapea y ve el panel del sistema) y **usuario**.
