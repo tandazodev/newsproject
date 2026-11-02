@@ -66,7 +66,7 @@ for pc in pc1 pc2 pc3 pc4; do
     if ! command -v tailscale >/dev/null 2>&1; then
       fila "$pc tailscale ping" "$ip" "FALLA"; INALCANZABLE[$pc]=1
       fallo "$pc ($ip): no está el comando tailscale en esta PC; instálalo y ejecuta 'sudo tailscale up'."
-    elif tailscale ping -c 1 --timeout 3s "$ip" >/dev/null 2>&1; then
+    elif tailscale ping --until-direct=false -c 1 --timeout 3s "$ip" >/dev/null 2>&1; then
       fila "$pc tailscale ping" "$ip" "OK"
     else
       fila "$pc tailscale ping" "$ip" "FALLA"; INALCANZABLE[$pc]=1
