@@ -74,6 +74,8 @@ async def scrape_source(source_id: str):
                     "title": title,
                     "body": body,
                     "source": source["name"],
+                    # id de la fuente: permite a cada usuario apagarla en su feed (eventos.md 3.5)
+                    "source_id": str(source["_id"]),
                     "published_at": pub_date,
                     "image_url": img_url,
                     "hash": content_hash,
@@ -128,5 +130,5 @@ async def run_periodic_scraping():
         except Exception as e:
             logger.error(f"Error en el ciclo automático: {str(e)}")
             
-        # Dormir 10 minutos (600 segundos)
+        # Esperar hasta el siguiente ciclo (SCRAPING_INTERVAL_MINUTES)
         await asyncio.sleep(settings.SCRAPING_INTERVAL_MINUTES * 60)

@@ -108,6 +108,16 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         return delivered;
     }
 
+    /** Sesiones WebSocket abiertas (para el panel del administrador). */
+    public int openSessions() {
+        return sessionsByUser.values().stream().mapToInt(Set::size).sum();
+    }
+
+    /** Usuarios con al menos una sesión abierta. */
+    public int connectedUsers() {
+        return sessionsByUser.size();
+    }
+
     private void remove(WebSocketSession session) {
         UUID userId = (UUID) session.getAttributes().get(ATTR_USER);
         WebSocketSession safe = (WebSocketSession) session.getAttributes().get(ATTR_SAFE);

@@ -21,5 +21,7 @@ public record StoredAlert(
         String imageUrl,
         Instant ingestedAt,
         Instant sentAt,
-        boolean read) {
+        boolean read,
+        boolean backfill,     // creada por el relleno inicial, no en vivo
+        String sourceId) {    // fuente de Ingesta (para borrarla si el usuario apaga la fuente)
 }

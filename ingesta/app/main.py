@@ -1,8 +1,10 @@
 # main.py
 import logging
 import asyncio
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks, status
+from fastapi.responses import JSONResponse
 from pydantic import HttpUrl
 from bson import ObjectId
 
@@ -38,7 +40,7 @@ async def startup():
     await with_retries("mongodb", connect_to_mongo)
     await with_retries("rabbitmq", connect_to_rabbitmq)
 
-    # Iniciar el ciclo automático de 10 minutos
+    # Iniciar el ciclo automático (cada SCRAPING_INTERVAL_MINUTES, 5 por defecto)
     task = asyncio.create_task(run_periodic_scraping())
     background_tasks_refs.add(task)
     task.add_done_callback(background_tasks_refs.discard)
@@ -128,21 +130,40 @@ async def get_scrape_logs(id: str):
 
 @app.get("/health")
 async def health_check():
-    """Verifica las conexiones vitales del contenedor (MongoDB y RabbitMQ)."""
-    health = {"status": "ok", "mongo": "ok", "rabbitmq": "ok"}
+    """Formato común de /health (docs/arquitectura.md, sección 7): 200 solo si BD y RabbitMQ están bien."""
+    db_ok, latencia = False, None
     try:
-        # Check Mongo
-        await db_manager.client.admin.command('ping')
+        t0 = time.monotonic()
+        await db_manager.client.admin.command("ping")
+        latencia, db_ok = round((time.monotonic() - t0) * 1000), True
     except Exception:
-        health["mongo"] = "error"
-        health["status"] = "error"
-        
-    # Check RabbitMQ
-    if not mq.connection or mq.connection.is_closed:
-        health["rabbitmq"] = "error"
-        health["status"] = "error"
-        
-    if health["status"] == "error":
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=health)
-        
-    return health
+        pass
+    conn = mq.connection
+    mq_ok = conn is not None and not conn.is_closed and not getattr(conn, "reconnecting", False) and mq.exchange is not None
+    details = {"scraping_interval_minutes": settings.SCRAPING_INTERVAL_MINUTES}
+    if db_ok and db_manager.db is not None:
+        try:
+            details["sources"] = await db_manager.db.sources.count_documents({})
+            # Fuentes cuya última ejecución terminó con errores
+            ultimas = db_manager.db.scrape_log.aggregate([
+                {"$sort": {"started_at": -1}},
+                {"$group": {"_id": "$source_id", "errors": {"$first": "$errors"}}},
+                {"$match": {"errors": {"$gt": 0}}},
+                {"$count": "n"},
+            ])
+            r = await ultimas.to_list(1)
+            details["sources_with_errors"] = r[0]["n"] if r else 0
+            details["articles"] = await db_manager.db.articles.estimated_document_count()
+        except Exception:
+            pass
+    ok = db_ok and mq_ok
+    body = {
+        "status": "ok" if ok else "unavailable",
+        "service": "ingesta",
+        "checks": {
+            "db": {"status": "ok" if db_ok else "error", "engine": "mongodb", "latency_ms": latencia},
+            "rabbitmq": {"status": "ok" if mq_ok else "error"},
+        },
+        "details": details,
+    }
+    return JSONResponse(body, status_code=200 if ok else 503)

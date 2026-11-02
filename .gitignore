@@ -25,3 +25,5 @@ target/
 
 # Dataset de Clasificación: vive en la rama "dataset"
 clasificacion/data/dataset.csv
+
+verificacion/ejecuciones

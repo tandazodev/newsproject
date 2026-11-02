@@ -35,7 +35,7 @@ async def connect_to_mongo():
                 {"name": "El Universo", "url": "https://www.eluniverso.com/arc/outboundfeeds/rss/?outputType=xml", "active": True},
                 {"name": "Perfil", "url": "https://www.perfil.com/feed", "active": True},
                 {"name": "BBC Mundo", "url": "https://feeds.bbci.co.uk/mundo/rss.xml", "active": True},
-                {"name": "Crónica", "url": "https://www.cronica.com.ar/rss/general.xml", "active": True}
+                {"name": "El País", "url": "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada", "active": True}
             ]
             await db.sources.insert_many(initial_sources)
             logger.info("Fuentes iniciales cargadas exitosamente.")

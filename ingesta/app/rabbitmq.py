@@ -82,6 +82,7 @@ async def retry_pending_articles():
                 "title": article.get("title"),
                 "body": article.get("body"),
                 "source": article.get("source"),
+                "source_id": article.get("source_id"),
                 "published_at": article.get("published_at"),
                 "image_url": article.get("image_url"),
                 "hash": article.get("hash")

@@ -1,12 +1,15 @@
-// Fuentes de noticias y scraping manual. Responsable: Kevin.
-// Usa (Ingesta, docs/arquitectura.md sección 7):
-//   GET  /api/sources               lista de fuentes con su último estado (last_scrape)
-//   POST /api/sources               registra una fuente nueva (RSS)
-//   POST /api/sources/{id}/scrape   dispara un scraping manual; responde 202 Accepted
+// Fuentes de noticias. Responsable: Kevin.
+// Usa (docs/arquitectura.md secciones 7 y 7.1):
+//   GET  /api/sources                    lista de fuentes con su último estado (todos)
+//   POST /api/sources                    registra una fuente nueva (solo administrador)
+//   POST /api/sources/{id}/scrape        scraping manual; 202 Accepted (solo administrador)
+//   GET  /api/users/me, PUT /api/users/{id}/preferences   fuentes apagadas en mi feed
+//                                        (disabled_sources, docs/eventos.md 3.5)
 // El scraping corre en segundo plano en Ingesta: tras el 202 se muestra "En proceso"
 // y se consulta la lista hasta que aparece una ejecución nueva de esa fuente.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { get, post } from "../api.js";
+import { get, post, put } from "../api.js";
+import { isAdmin, setUser } from "../user.js";
 
 const INTERVALO_MS = 2000; // cada cuánto se refresca mientras hay scrapings en curso
 const ESPERA_MAX_MS = 90000; // después de esto se deja de esperar y se avisa
@@ -119,6 +122,44 @@ export default function Fuentes() {
   const [avisos, setAvisos] = useState({}); // id -> aviso del último scraping
   const enProcesoRef = useRef(enProceso);
   enProcesoRef.current = enProceso;
+  const admin = isAdmin();
+  const [usuario, setUsuario] = useState(null); // para las fuentes apagadas en mi feed
+  const [cambiando, setCambiando] = useState(null); // id de la fuente que se está guardando
+
+  useEffect(() => {
+    get("/users/me").then(setUsuario).catch(() => setUsuario(null));
+  }, []);
+
+  const apagadas = new Set(usuario?.preferences?.disabled_sources ?? []);
+
+  async function alternarEnFeed(fuente) {
+    if (!usuario) return;
+    const p = usuario.preferences;
+    const nuevas = apagadas.has(fuente.id)
+      ? [...apagadas].filter((id) => id !== fuente.id)
+      : [...apagadas, fuente.id];
+    const anterior = usuario;
+    // Optimista: el interruptor cambia al instante y se revierte si el guardado falla
+    setUsuario({ ...usuario, preferences: { ...p, disabled_sources: nuevas } });
+    setCambiando(fuente.id);
+    setAvisos((a) => ({ ...a, [fuente.id]: null }));
+    try {
+      // PUT reemplaza todas las preferencias: se reenvían las actuales con la lista nueva
+      const actualizado = await put(`/users/${usuario.user_id}/preferences`, {
+        categories: p.categories,
+        keywords: p.keywords,
+        notifications_enabled: p.notifications_enabled,
+        disabled_sources: nuevas,
+      });
+      setUsuario(actualizado);
+      setUser(actualizado);
+    } catch (e) {
+      setUsuario(anterior);
+      setAvisos((a) => ({ ...a, [fuente.id]: { tipo: "error", texto: textoError(e) } }));
+    } finally {
+      setCambiando(null);
+    }
+  }
 
   const cargar = useCallback(async () => {
     try {
@@ -183,10 +224,11 @@ export default function Fuentes() {
     <section className="fuentes">
       <h1>Fuentes</h1>
       <p className="suave">
-        Ingesta revisa las fuentes activas cada 10 minutos. Con «Scrapear» puedes traer sus noticias ahora.
+        Las fuentes se revisan solas cada pocos minutos. Apaga las que no quieras ver en tu feed
+        {admin ? "; como administrador también puedes agregar fuentes y scrapearlas ahora." : "."}
       </p>
 
-      <FormularioFuente onCreada={cargar} />
+      {admin && <FormularioFuente onCreada={cargar} />}
 
       {error && (
         <div className="aviso aviso-error fuentes-error" role="alert">
@@ -209,11 +251,18 @@ export default function Fuentes() {
                     <a href={f.url} target="_blank" rel="noopener noreferrer" className="fuente-url">{f.url}</a>
                   </div>
                   <Estado fuente={f} enProceso={ocupada} />
-                  <button type="button" className="boton" onClick={() => scrapear(f)}
-                          disabled={ocupada || !f.active}
-                          title={f.active ? undefined : "La fuente está inactiva"}>
-                    {ocupada ? "En proceso…" : "Scrapear"}
-                  </button>
+                  <label className="interruptor-feed" title="Mostrar las noticias de esta fuente en mi feed">
+                    <input type="checkbox" role="switch" checked={!apagadas.has(f.id)}
+                           disabled={!usuario} onChange={() => cambiando !== f.id && alternarEnFeed(f)} />
+                    En mi feed
+                  </label>
+                  {admin && (
+                    <button type="button" className="boton" onClick={() => scrapear(f)}
+                            disabled={ocupada || !f.active}
+                            title={f.active ? undefined : "La fuente está inactiva"}>
+                      {ocupada ? "En proceso…" : "Scrapear"}
+                    </button>
+                  )}
                 </div>
                 <Resumen ultimo={f.last_scrape} />
                 <Aviso aviso={avisos[f.id]} />

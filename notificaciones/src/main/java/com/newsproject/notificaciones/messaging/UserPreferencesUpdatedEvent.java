@@ -16,6 +16,7 @@ public record UserPreferencesUpdatedEvent(
             UUID userId,
             List<String> categories,
             List<String> keywords,
-            Boolean notificationsEnabled) {
+            Boolean notificationsEnabled,
+            List<String> disabledSources) {   // opcional: ausente equivale a []
     }
 }

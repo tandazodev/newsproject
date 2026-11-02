@@ -56,8 +56,12 @@ services:
     environment:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_MONITOR_USER: ${RABBITMQ_MONITOR_USER:-monitor}
+      RABBITMQ_MONITOR_PASS: ${RABBITMQ_MONITOR_PASS:?Falta RABBITMQ_MONITOR_PASS en .env (ver .env.example)}
     volumes:
       - ./infra/rabbitmq/definitions.json:/definitions.json:ro
+    # 1) Importa la topología. 2) Crea el usuario de solo monitoreo que usa el panel del
+    # administrador (gateway): etiqueta "monitoring" y sin permisos de configurar, leer ni escribir.
     entrypoint:
       - sh
       - -c
@@ -68,6 +72,13 @@ services:
         -X POST http://rabbitmq:15672/api/definitions
         -d @/definitions.json
         && echo "Definiciones importadas"
+        && curl -fsS -u "$$RABBITMQ_USER:$$RABBITMQ_PASS" -H "content-type: application/json"
+        -X PUT "http://rabbitmq:15672/api/users/$$RABBITMQ_MONITOR_USER"
+        -d "{\"password\":\"$$RABBITMQ_MONITOR_PASS\",\"tags\":\"monitoring\"}"
+        && curl -fsS -u "$$RABBITMQ_USER:$$RABBITMQ_PASS" -H "content-type: application/json"
+        -X PUT "http://rabbitmq:15672/api/permissions/%2F/$$RABBITMQ_MONITOR_USER"
+        -d "{\"configure\":\"^$$\",\"write\":\"^$$\",\"read\":\"^$$\"}"
+        && echo "Usuario de monitoreo listo"
     networks: [newsproject-net]
 
   # ------------------------------------------------------------------
@@ -82,6 +93,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${INGESTA_DB_PASS}
       DATABASE_URL: mongodb://${INGESTA_DB_USER}:${INGESTA_DB_PASS}@localhost:27017/ingesta?authSource=admin
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+      SCRAPING_INTERVAL_MINUTES: ${INGESTA_SCRAPING_INTERVAL_MINUTES:-5}
     volumes: ["ingesta_data:/data/db"]
     healthcheck: *python-health
 
@@ -121,6 +133,10 @@ services:
       POSTGRES_PASSWORD: ${USUARIOS_DB_PASS}
       DATABASE_URL: postgresql://${USUARIOS_DB_USER}:${USUARIOS_DB_PASS}@localhost:5432/usuarios
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env (ver .env.example)}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en .env (ver .env.example)}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env (ver .env.example)}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
     volumes: ["usuarios_data:/var/lib/postgresql/data"]
     healthcheck: *python-health
 
@@ -139,6 +155,7 @@ services:
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS}
+      ALERTS_RETENTION_DAYS: ${NOTIFICACIONES_ALERTS_RETENTION_DAYS:-7}
     volumes: ["notificaciones_data:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
@@ -160,6 +177,12 @@ services:
       BUSQUEDA_URL: http://busqueda:8000
       USUARIOS_URL: http://usuarios:8000
       NOTIFICACIONES_URL: http://notificaciones:8080
+      FRONTEND_URL: http://frontend:80
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env (ver .env.example)}
+      # Panel del administrador: lee colas y estado del broker con un usuario de solo monitoreo
+      RABBITMQ_API_URL: http://rabbitmq:15672
+      RABBITMQ_MONITOR_USER: ${RABBITMQ_MONITOR_USER:-monitor}
+      RABBITMQ_MONITOR_PASS: ${RABBITMQ_MONITOR_PASS:?Falta RABBITMQ_MONITOR_PASS en .env (ver .env.example)}
     ports:
       - "8080:8000"
     # service_started (no healthy): si un servicio falla, el gateway igual
