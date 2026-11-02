@@ -32,6 +32,9 @@ JWT_SECRET = os.environ["JWT_SECRET"]
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://frontend:80")
 RABBITMQ_API_URL = os.environ.get("RABBITMQ_API_URL", "http://rabbitmq:15672")
 RABBITMQ_MONITOR = (os.environ.get("RABBITMQ_MONITOR_USER", ""), os.environ.get("RABBITMQ_MONITOR_PASS", ""))
+# Modo distribuido: secreto compartido con los servicios, que rechazan (403) lo que no venga del
+# gateway. Vacío (modo de una PC) = no se envía y los servicios no lo exigen.
+INTERNAL_TOKEN = os.environ.get("INTERNAL_TOKEN", "")
 
 # Cada microservicio con su BD (dentro de su contenedor) y las colas que consume
 GROUPS = [
@@ -75,8 +78,8 @@ HOP_BY_HOP = {
     "proxy-authorization", "proxy-authenticate",
 }
 RESPONSE_SKIP = HOP_BY_HOP | {"content-encoding"}
-# Cabeceras de identidad: solo las pone el gateway a partir del token
-IDENTITY = {"x-user-id", "x-user-role"}
+# Cabeceras de identidad y token interno: solo las pone el gateway, nunca se copian del cliente
+IDENTITY = {"x-user-id", "x-user-role", "x-internal-token"}
 
 # Rutas sin token (método, ruta exacta)
 PUBLIC = {("POST", "/api/users"), ("POST", "/api/auth/login"), ("GET", "/api/categories")}
@@ -98,6 +101,11 @@ def log(stage, **fields):
 
 def clean_headers(headers, exclude=HOP_BY_HOP):
     return {k: v for k, v in headers.items() if k.lower() not in exclude}
+
+
+def internal_headers():
+    """X-Internal-Token para llamar a los servicios (vacío si INTERNAL_TOKEN no está definido)."""
+    return {"X-Internal-Token": INTERNAL_TOKEN} if INTERNAL_TOKEN else {}
 
 
 def decode_token(token):
@@ -174,7 +182,7 @@ async def api_status():
     async def check(name, url):
         try:
             start = time.monotonic()
-            resp = await state["client"].get(f"{url}/health", timeout=2.0)
+            resp = await state["client"].get(f"{url}/health", timeout=2.0, headers=internal_headers())
             latency_ms = round((time.monotonic() - start) * 1000)
             if resp.status_code == 200:
                 return name, {"status": "ok", "http_status": resp.status_code, "latency_ms": latency_ms}
@@ -217,7 +225,7 @@ async def admin_status(request: Request):
     async def health(name, url):
         start = time.monotonic()
         try:
-            resp = await client.get(f"{url}/health", timeout=3.0)
+            resp = await client.get(f"{url}/health", timeout=3.0, headers=internal_headers())
             body = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else None
             return name, {"reachable": True, "http_status": resp.status_code,
                           "latency_ms": round((time.monotonic() - start) * 1000), "health": body}
@@ -318,6 +326,7 @@ async def proxy(path: str, request: Request):
     if claims is not None:
         headers["X-User-Id"] = claims["sub"]
         headers["X-User-Role"] = claims["role"]
+    headers.update(internal_headers())
 
     start = time.monotonic()
     try:
@@ -360,7 +369,8 @@ async def ws_notifications(websocket: WebSocket):
 
     ws_url = f"{NOTIFICACIONES_WS_URL}?user_id={quote(user_id)}"
     try:
-        upstream = await websockets.connect(ws_url, open_timeout=5)
+        # websockets 13.1: websockets.connect es el cliente legacy, cuyas cabeceras van en extra_headers
+        upstream = await websockets.connect(ws_url, open_timeout=5, extra_headers=internal_headers())
     except (websockets.exceptions.InvalidHandshake, OSError, asyncio.TimeoutError) as exc:
         log("ws.upstream_unavailable", user_id=user_id, error=type(exc).__name__)
         await websocket.close(code=1013, reason="notificaciones no disponible")

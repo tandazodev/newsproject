@@ -9,6 +9,7 @@ busqueda.article-classified), no publica eventos y expone:
 import asyncio
 import json
 import os
+import secrets
 import time
 import unicodedata
 import uuid
@@ -17,7 +18,7 @@ from datetime import datetime, timezone
 from enum import Enum
 
 import aio_pika
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import DESCENDING, TEXT
@@ -192,18 +193,29 @@ async def startup():
     await init_db(articles)
     state["client"], state["articles"] = client, articles
 
-    # connect_robust reconecta (y recupera canal y consumidor) si RabbitMQ se cae.
-    connection = await with_retries("rabbitmq", lambda: aio_pika.connect_robust(RABBITMQ_URL))
-    channel = await connection.channel()
-    await channel.set_qos(prefetch_count=10)
-    # La cola la crea rabbitmq-init; aquí solo se verifica que exista.
-    queue = await channel.declare_queue(QUEUE, passive=True)
-    await queue.consume(on_message)
+    # Toda la preparación de RabbitMQ se reintenta junta: en el modo distribuido el servicio puede
+    # arrancar antes de que rabbitmq-init cree la cola, y la verificación pasiva fallaría.
+    connection, channel, queue = await with_retries("rabbitmq", connect_rabbitmq)
     # aio-pika guarda en un WeakSet las colas que restaura al reconectar: sin una
     # referencia fuerte, el consumidor no se recupera tras reiniciar RabbitMQ.
     state["channel"], state["queue"] = channel, queue
     state["amqp"] = connection
     log("rabbitmq.ready", queue=QUEUE)
+
+
+async def connect_rabbitmq():
+    # connect_robust reconecta (y recupera canal y consumidor) si RabbitMQ se cae.
+    connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    try:
+        channel = await connection.channel()
+        await channel.set_qos(prefetch_count=10)
+        # La cola la crea rabbitmq-init; aquí solo se verifica que exista.
+        queue = await channel.declare_queue(QUEUE, passive=True)
+        await queue.consume(on_message)
+    except Exception:
+        await connection.close()   # si no, la conexión robusta seguiría reconectando sola
+        raise
+    return connection, channel, queue
 
 
 @asynccontextmanager
@@ -219,6 +231,21 @@ async def lifespan(_app):
 
 
 app = FastAPI(title=SERVICE, lifespan=lifespan)
+
+# Modo distribuido (docker-compose.distribuido.yml): el puerto del servicio queda publicado en la
+# red, así que con INTERNAL_TOKEN definido solo se aceptan peticiones que traigan el mismo valor en
+# X-Internal-Token (lo pone el gateway). Vacío (modo de una PC) = sin cambios. /health queda libre
+# para diagnosticar la red.
+INTERNAL_TOKEN = os.environ.get("INTERNAL_TOKEN", "")
+
+
+@app.middleware("http")
+async def internal_token(request: Request, call_next):
+    if INTERNAL_TOKEN and request.url.path != "/health":
+        sent = request.headers.get("x-internal-token", "")
+        if not secrets.compare_digest(sent.encode(), INTERNAL_TOKEN.encode()):
+            return JSONResponse({"detail": "token interno inválido"}, status_code=403)
+    return await call_next(request)
 
 
 async def db_check():

@@ -1,0 +1,251 @@
+# newsproject — modo distribuido en 4 PCs Linux (opcional)
+#
+# No reemplaza a docker-compose.yml: el modo de una sola PC sigue igual.
+# Cada PC levanta solo sus perfiles con deploy/levantar.sh <switch|tailscale>:
+#
+#   pc1: entrada (gateway + frontend) y usuarios
+#   pc2: ingesta
+#   pc3: clasificacion y busqueda
+#   pc4: broker (rabbitmq + rabbitmq-init) y notificaciones
+#
+# Variables:
+#   .env.distribuido          claves (las mismas en las 4 PCs)
+#   .env.switch / .tailscale  IP de cada PC (PC1_IP ... PC4_IP)
+#   MI_IP                     IP de esta PC; la calcula deploy/levantar.sh
+#
+# Cada puerto se publica solo en ${MI_IP}. Los servicios encuentran RabbitMQ en
+# ${PC4_IP} y el gateway encuentra a cada servicio por la IP de su PC.
+# No hay depends_on entre PCs: el arranque se apoya en los reintentos de cada servicio.
+#
+# Token interno: el gateway y los 5 servicios reciben INTERNAL_TOKEN (valor de
+# DISTRIBUTED_INTERNAL_TOKEN). El gateway lo envía en X-Internal-Token y cada servicio
+# responde 403 a lo que llegue sin él, salvo GET /health. En docker-compose.yml no se
+# define, así que el modo de una PC no cambia.
+
+name: newsproject-dist
+
+x-service-base: &service-base
+  restart: unless-stopped
+  networks: [newsproject-dist-net]
+
+x-python-health: &python-health
+  test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+  interval: 10s
+  timeout: 5s
+  retries: 10
+  start_period: 30s
+
+services:
+  # ------------------------------------------------------------------
+  # Broker (pc4)
+  # ------------------------------------------------------------------
+  rabbitmq:
+    profiles: [broker]
+    image: rabbitmq:3.13-management
+    container_name: newsproject-dist-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    ports:
+      - "${MI_IP:?Falta MI_IP (usa deploy/levantar.sh)}:5672:5672"     # AMQP para los servicios de las otras PCs
+      - "${MI_IP:?Falta MI_IP (usa deploy/levantar.sh)}:15672:15672"   # Panel y API (rabbitmq-init y panel del gateway)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [newsproject-dist-net]
+
+  # Carga exchanges, colas (quorum) y bindings desde definitions.json, crea el
+  # usuario de monitoreo y termina. Corre en la misma PC que el broker.
+  rabbitmq-init:
+    profiles: [broker]
+    image: curlimages/curl:8.10.1
+    container_name: newsproject-dist-rabbitmq-init
+    restart: "no"
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_MONITOR_USER: ${RABBITMQ_MONITOR_USER:-monitor}
+      RABBITMQ_MONITOR_PASS: ${RABBITMQ_MONITOR_PASS:?Falta RABBITMQ_MONITOR_PASS en .env.distribuido}
+    volumes:
+      - ./infra/rabbitmq/definitions.json:/definitions.json:ro
+    entrypoint:
+      - sh
+      - -c
+      - >
+        curl -fsS --retry 15 --retry-delay 3 --retry-connrefused
+        -u "$$RABBITMQ_USER:$$RABBITMQ_PASS"
+        -H "content-type: application/json"
+        -X POST http://rabbitmq:15672/api/definitions
+        -d @/definitions.json
+        && echo "Definiciones importadas"
+        && curl -fsS -u "$$RABBITMQ_USER:$$RABBITMQ_PASS" -H "content-type: application/json"
+        -X PUT "http://rabbitmq:15672/api/users/$$RABBITMQ_MONITOR_USER"
+        -d "{\"password\":\"$$RABBITMQ_MONITOR_PASS\",\"tags\":\"monitoring\"}"
+        && curl -fsS -u "$$RABBITMQ_USER:$$RABBITMQ_PASS" -H "content-type: application/json"
+        -X PUT "http://rabbitmq:15672/api/permissions/%2F/$$RABBITMQ_MONITOR_USER"
+        -d "{\"configure\":\"^$$\",\"write\":\"^$$\",\"read\":\"^$$\"}"
+        && echo "Usuario de monitoreo listo"
+    networks: [newsproject-dist-net]
+
+  # ------------------------------------------------------------------
+  # Microservicios (backend + BD en el mismo contenedor)
+  # ------------------------------------------------------------------
+  ingesta:                       # pc2 · FastAPI + MongoDB
+    <<: *service-base
+    profiles: [ingesta]
+    build: ./ingesta
+    container_name: newsproject-dist-ingesta
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${INGESTA_DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${INGESTA_DB_PASS}
+      DATABASE_URL: mongodb://${INGESTA_DB_USER}:${INGESTA_DB_PASS}@localhost:27017/ingesta?authSource=admin
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${PC4_IP:?Falta PC4_IP}:5672
+      SCRAPING_INTERVAL_MINUTES: ${INGESTA_SCRAPING_INTERVAL_MINUTES:-5}
+      INTERNAL_TOKEN: ${DISTRIBUTED_INTERNAL_TOKEN:?Falta DISTRIBUTED_INTERNAL_TOKEN en .env.distribuido}
+    ports:
+      - "${MI_IP:?Falta MI_IP (usa deploy/levantar.sh)}:8001:8000"
+    volumes: ["ingesta_data:/data/db"]
+    healthcheck: *python-health
+
+  clasificacion:                 # pc3 · FastAPI + PostgreSQL
+    <<: *service-base
+    profiles: [clasificacion]
+    build: ./clasificacion
+    container_name: newsproject-dist-clasificacion
+    environment:
+      POSTGRES_DB: clasificacion
+      POSTGRES_USER: ${CLASIFICACION_DB_USER}
+      POSTGRES_PASSWORD: ${CLASIFICACION_DB_PASS}
+      DATABASE_URL: postgresql://${CLASIFICACION_DB_USER}:${CLASIFICACION_DB_PASS}@localhost:5432/clasificacion
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${PC4_IP:?Falta PC4_IP}:5672
+      MIN_SCORE: ${CLASIFICACION_MIN_SCORE:-0.5}
+      INTERNAL_TOKEN: ${DISTRIBUTED_INTERNAL_TOKEN:?Falta DISTRIBUTED_INTERNAL_TOKEN en .env.distribuido}
+    ports:
+      - "${MI_IP:?Falta MI_IP (usa deploy/levantar.sh)}:8002:8000"
+    volumes: ["clasificacion_data:/var/lib/postgresql/data"]
+    healthcheck: *python-health
+
+  busqueda:                      # pc3 · FastAPI + MongoDB
+    <<: *service-base
+    profiles: [busqueda]
+    build: ./busqueda
+    container_name: newsproject-dist-busqueda
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${BUSQUEDA_DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${BUSQUEDA_DB_PASS}
+      DATABASE_URL: mongodb://${BUSQUEDA_DB_USER}:${BUSQUEDA_DB_PASS}@localhost:27017/busqueda?authSource=admin
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${PC4_IP:?Falta PC4_IP}:5672
+      INTERNAL_TOKEN: ${DISTRIBUTED_INTERNAL_TOKEN:?Falta DISTRIBUTED_INTERNAL_TOKEN en .env.distribuido}
+    ports:
+      - "${MI_IP:?Falta MI_IP (usa deploy/levantar.sh)}:8003:8000"
+    volumes: ["busqueda_data:/data/db"]
+    healthcheck: *python-health
+
+  usuarios:                      # pc1 · FastAPI + PostgreSQL
+    <<: *service-base
+    profiles: [usuarios]
+    build: ./usuarios
+    container_name: newsproject-dist-usuarios
+    environment:
+      POSTGRES_DB: usuarios
+      POSTGRES_USER: ${USUARIOS_DB_USER}
+      POSTGRES_PASSWORD: ${USUARIOS_DB_PASS}
+      DATABASE_URL: postgresql://${USUARIOS_DB_USER}:${USUARIOS_DB_PASS}@localhost:5432/usuarios
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${PC4_IP:?Falta PC4_IP}:5672
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env.distribuido}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en .env.distribuido}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env.distribuido}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      INTERNAL_TOKEN: ${DISTRIBUTED_INTERNAL_TOKEN:?Falta DISTRIBUTED_INTERNAL_TOKEN en .env.distribuido}
+    ports:
+      - "${MI_IP:?Falta MI_IP (usa deploy/levantar.sh)}:8004:8000"
+    volumes: ["usuarios_data:/var/lib/postgresql/data"]
+    healthcheck: *python-health
+
+  notificaciones:                # pc4 · Spring Boot + PostgreSQL
+    <<: *service-base
+    profiles: [notificaciones]
+    build: ./notificaciones
+    container_name: newsproject-dist-notificaciones
+    # Misma PC que el broker: espera a rabbitmq-init si el perfil broker está activo.
+    depends_on:
+      rabbitmq-init: { condition: service_completed_successfully, required: false }
+    environment:
+      POSTGRES_DB: notificaciones
+      POSTGRES_USER: ${NOTIFICACIONES_DB_USER}
+      POSTGRES_PASSWORD: ${NOTIFICACIONES_DB_PASS}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/notificaciones
+      SPRING_DATASOURCE_USERNAME: ${NOTIFICACIONES_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${NOTIFICACIONES_DB_PASS}
+      SPRING_RABBITMQ_HOST: ${PC4_IP:?Falta PC4_IP}
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS}
+      ALERTS_RETENTION_DAYS: ${NOTIFICACIONES_ALERTS_RETENTION_DAYS:-7}
+      INTERNAL_TOKEN: ${DISTRIBUTED_INTERNAL_TOKEN:?Falta DISTRIBUTED_INTERNAL_TOKEN en .env.distribuido}
+    ports:
+      - "${MI_IP:?Falta MI_IP (usa deploy/levantar.sh)}:8005:8080"
+    volumes: ["notificaciones_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # ------------------------------------------------------------------
+  # Entrada (pc1): gateway + frontend en la misma PC
+  # ------------------------------------------------------------------
+  gateway:                       # pc1 · FastAPI, sin BD
+    profiles: [entrada]
+    build: ./gateway
+    container_name: newsproject-dist-gateway
+    restart: unless-stopped
+    environment:
+      INGESTA_URL: http://${PC2_IP:?Falta PC2_IP}:8001
+      CLASIFICACION_URL: http://${PC3_IP:?Falta PC3_IP}:8002
+      BUSQUEDA_URL: http://${PC3_IP:?Falta PC3_IP}:8003
+      USUARIOS_URL: http://${PC1_IP:?Falta PC1_IP}:8004
+      NOTIFICACIONES_URL: http://${PC4_IP:?Falta PC4_IP}:8005
+      # El frontend está en la misma PC y la misma red de Docker
+      FRONTEND_URL: http://frontend:80
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env.distribuido}
+      RABBITMQ_API_URL: http://${PC4_IP:?Falta PC4_IP}:15672
+      RABBITMQ_MONITOR_USER: ${RABBITMQ_MONITOR_USER:-monitor}
+      RABBITMQ_MONITOR_PASS: ${RABBITMQ_MONITOR_PASS:?Falta RABBITMQ_MONITOR_PASS en .env.distribuido}
+      INTERNAL_TOKEN: ${DISTRIBUTED_INTERNAL_TOKEN:?Falta DISTRIBUTED_INTERNAL_TOKEN en .env.distribuido}
+    ports:
+      - "${MI_IP:?Falta MI_IP (usa deploy/levantar.sh)}:8080:8000"
+    healthcheck: *python-health
+    networks: [newsproject-dist-net]
+
+  frontend:                      # pc1 · React + Nginx
+    profiles: [entrada]
+    build: ./frontend
+    container_name: newsproject-dist-frontend
+    restart: unless-stopped
+    # nginx.conf reenvía /api y /ws a gateway:8000 por el DNS de Docker (misma PC)
+    ports:
+      - "${MI_IP:?Falta MI_IP (usa deploy/levantar.sh)}:3000:80"
+    depends_on: [gateway]
+    networks: [newsproject-dist-net]
+
+volumes:
+  rabbitmq_data:
+  ingesta_data:
+  clasificacion_data:
+  busqueda_data:
+  usuarios_data:
+  notificaciones_data:
+
+networks:
+  newsproject-dist-net:
+    driver: bridge
