@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class PreferenceMatcherTest {
 
     private static UserPreferences prefs(List<String> cats, List<String> keys, boolean enabled) {
-        return new UserPreferences(UUID.randomUUID(), cats, keys, enabled);
+        return new UserPreferences(UUID.randomUUID(), cats, keys, enabled, List.of());
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.newsproject.notificaciones;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Notificaciones (responsable: Ariel).
@@ -11,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * (docs/arquitectura.md, secciones 6 y 7).
  */
 @SpringBootApplication
+@EnableScheduling   // limpieza periódica de alertas antiguas (service/AlertCleanup)
 public class NotificacionesApplication {
 
     public static void main(String[] args) {

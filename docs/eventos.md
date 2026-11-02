@@ -73,6 +73,7 @@ Publica: **Ingesta**. Consume: **Clasificación**.
     "title": "Título de la noticia",
     "body": "Texto limpio del artículo...",
     "source": "ejemplo.com",
+    "source_id": "6ae7aeea22e26d7d67be2610",
     "published_at": "2026-10-25T13:55:00Z",
     "image_url": "https://ejemplo.com/fotos/noticia-1.jpg",
     "hash": "sha256-del-contenido"
@@ -89,6 +90,7 @@ Publica: **Ingesta**. Consume: **Clasificación**.
 | `source` | string | sí | Nombre o dominio de la fuente |
 | `published_at` | ISO 8601 UTC | sí | Fecha de publicación original |
 | `image_url` | string o `null` | no | Imagen de portada que trae el feed (URL absoluta `https://`). `null` o ausente si no hay. Ver sección 3.4 |
+| `source_id` | string | no | Id de la fuente en Ingesta (el `id` de `GET /api/sources`). Permite que cada usuario desactive fuentes en su feed. Ver sección 3.5 |
 | `hash` | string | sí | SHA-256 de título + cuerpo (sin `image_url`); Ingesta solo republica un artículo si su hash cambió |
 
 ### 3.2 `article.classified`
@@ -107,6 +109,7 @@ Publica: **Clasificación**. Consume: **Búsqueda** y **Notificaciones**.
     "title": "Título de la noticia",
     "summary": "Resumen corto del artículo.",
     "source": "ejemplo.com",
+    "source_id": "6ae7aeea22e26d7d67be2610",
     "published_at": "2026-10-25T13:55:00Z",
     "ingested_at": "2026-10-25T14:30:00Z",
     "image_url": "https://ejemplo.com/fotos/noticia-1.jpg",
@@ -122,6 +125,7 @@ Publica: **Clasificación**. Consume: **Búsqueda** y **Notificaciones**.
 | `article_id` | UUID | sí | El mismo de `article.ingested` |
 | `url`, `title`, `source`, `published_at` | — | sí | Copiados del evento original |
 | `image_url` | string o `null` | no | Copiado tal cual de `article.ingested`; no se usa para clasificar |
+| `source_id` | string | no | Copiado tal cual de `article.ingested`. Ver sección 3.5 |
 | `summary` | string | sí | Primeras ~200 palabras o resumen generado |
 | `ingested_at` | ISO 8601 UTC | sí | Copia de `occurred_at` de `article.ingested`; necesario para calcular latencia |
 | `category` | string | sí | Una de las categorías de la sección 4 |
@@ -142,7 +146,8 @@ Publica: **Usuarios**. Consume: **Notificaciones**.
     "user_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
     "categories": ["tecnologia", "deportes"],
     "keywords": ["rabbitmq", "ecuador"],
-    "notifications_enabled": true
+    "notifications_enabled": true,
+    "disabled_sources": ["6ae7aeea22e26d7d67be2611"]
   }
 }
 ```
@@ -153,6 +158,7 @@ Publica: **Usuarios**. Consume: **Notificaciones**.
 | `categories` | string[] | sí | Reemplaza por completo la lista anterior (no es un diff) |
 | `keywords` | string[] | sí | Reemplaza por completo la lista anterior |
 | `notifications_enabled` | booleano | sí | |
+| `disabled_sources` | string[] | no | `source_id` de las fuentes que el usuario apagó en su feed; reemplaza por completo la lista anterior. Ausente equivale a `[]`. Ver sección 3.5 |
 
 Notificaciones guarda una copia local de las preferencias a partir de este evento, así no depende de que Usuarios esté disponible.
 
@@ -165,6 +171,16 @@ Campo **opcional** de `article.ingested` y `article.classified`, para mostrar la
 - **Recorrido:** Clasificación la copia sin cambios; Búsqueda y Notificaciones la guardan y la devuelven en sus respuestas REST y en el mensaje WebSocket (sección 7).
 - **Compatibilidad:** es un campo nuevo y opcional, y los consumidores ignoran lo que no conocen (regla 5 de la sección 5), así que `version` sigue en 1.
 - **No afecta al modelo ni al dataset:** el clasificador usa solo `title + ". " + body`, y `clean_html` elimina las `<img>`, así que el texto es idéntico con o sin imagen.
+
+### 3.5 Fuentes por usuario (`source_id`, `disabled_sources`)
+
+Cada usuario puede apagar fuentes en su feed (las fuentes las agrega solo un administrador; ver `docs/arquitectura.md`, sección 7.1).
+
+- **Activas por defecto:** se guarda la lista de fuentes **desactivadas**. Una fuente nueva aparece en el feed de todos hasta que cada uno la apague.
+- **Origen:** Ingesta pone en `article.ingested` el `source_id` de la fuente (el mismo `id` que devuelve `GET /api/sources`); Clasificación lo copia sin cambios a `article.classified`; Búsqueda lo guarda y lo devuelve en sus respuestas.
+- **Filtro:** Notificaciones no crea alertas de un artículo cuyo `source_id` está en `disabled_sources` del usuario, aunque coincida con sus categorías o keywords. Un artículo sin `source_id` no se filtra.
+- **Solo afecta al feed:** la búsqueda sigue mostrando todas las fuentes.
+- **Compatibilidad:** son campos opcionales nuevos y los consumidores ignoran lo que no conocen (sección 5, regla 5), así que `version` sigue en 1.
 
 ## 4. Categorías válidas
 
@@ -186,7 +202,7 @@ La latencia extremo a extremo se calcula como la hora en que el artículo llega 
 
 ## 7. Mensaje WebSocket al frontend
 
-No es un evento de RabbitMQ, pero también es contrato. Notificaciones lo envía por `/ws/notifications?user_id=<id>` (vía gateway) cuando un `article.classified` coincide con las preferencias del usuario:
+No es un evento de RabbitMQ, pero también es contrato. Notificaciones lo envía por `/ws/notifications?token=<jwt>` (vía gateway, que valida el token y se conecta a Notificaciones con el `user_id` del token) cuando un `article.classified` coincide con las preferencias del usuario:
 
 ```json
 {
@@ -201,9 +217,12 @@ No es un evento de RabbitMQ, pero también es contrato. Notificaciones lo envía
     "url": "https://ejemplo.com/noticia-1",
     "image_url": "https://ejemplo.com/fotos/noticia-1.jpg",
     "ingested_at": "2026-10-25T14:30:00Z",
-    "sent_at": "2026-10-25T14:30:03Z"
+    "sent_at": "2026-10-25T14:30:03Z",
+    "backfill": false
   }
 }
 ```
 
 `image_url` puede ser `null`; el frontend muestra entonces un marcador con la categoría.
+
+`backfill` (booleano, opcional; ausente equivale a `false`) es `true` en las alertas del relleno inicial: artículos que ya estaban publicados cuando el usuario guardó sus preferencias (`docs/arquitectura.md`, sección 6). La latencia extremo a extremo (sección 6) solo se mide con las alertas que no son de relleno.

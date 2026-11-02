@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     RABBITMQ_URL: str = "amqp://guest:guest@localhost/"
     
     # Configuración del Scraping
-    SCRAPING_INTERVAL_MINUTES: int = 10
+    SCRAPING_INTERVAL_MINUTES: int = 5  # los feeds se refrescan cada ~5 min (cache-control: max-age=300)
     HTTP_TIMEOUT_SECONDS: int = 10
     USER_AGENT: str = "newsproject-unl/1.0 (proyecto academico)"
     

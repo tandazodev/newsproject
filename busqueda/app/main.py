@@ -9,6 +9,7 @@ busqueda.article-classified), no publica eventos y expone:
 import asyncio
 import json
 import os
+import time
 import unicodedata
 import uuid
 from contextlib import asynccontextmanager
@@ -31,7 +32,7 @@ QUEUE = "busqueda.article-classified"
 PAGE_SIZE = 10
 STRING_FIELDS = ("article_id", "url", "title", "summary", "source", "published_at",
                  "ingested_at", "category")
-ITEM_FIELDS = ("article_id", "title", "summary", "url", "source", "category", "tags",
+ITEM_FIELDS = ("article_id", "title", "summary", "url", "source", "source_id", "category", "tags",
                "published_at", "image_url")
 
 CATEGORIES = [
@@ -41,7 +42,7 @@ CATEGORIES = [
 Category = Enum("Category", {c: c for c in CATEGORIES}, type=str)
 
 # Estado compartido del proceso; lo llena el arranque en segundo plano.
-state = {"client": None, "articles": None, "amqp": None}
+state = {"client": None, "articles": None, "amqp": None, "channel": None, "queue": None}
 
 
 def utc_now():
@@ -131,6 +132,9 @@ def parse_message(raw):
         image_url = p.get("image_url")
         if image_url is not None and not isinstance(image_url, str):
             raise InvalidMessage("image_url debe ser texto o null")
+        source_id = p.get("source_id")  # opcional (eventos.md 3.5)
+        if source_id is not None and not isinstance(source_id, str):
+            raise InvalidMessage("source_id debe ser texto")
         article_id = str(uuid.UUID(p["article_id"]))
         doc = {
             "_id": article_id,
@@ -139,6 +143,7 @@ def parse_message(raw):
             "title": p["title"],
             "summary": p["summary"],
             "source": p["source"],
+            "source_id": source_id,
             "published_at": parse_ts(p["published_at"]),
             "ingested_at": parse_ts(p["ingested_at"]),
             "image_url": image_url,
@@ -194,6 +199,9 @@ async def startup():
     # La cola la crea rabbitmq-init; aquí solo se verifica que exista.
     queue = await channel.declare_queue(QUEUE, passive=True)
     await queue.consume(on_message)
+    # aio-pika guarda en un WeakSet las colas que restaura al reconectar: sin una
+    # referencia fuerte, el consumidor no se recupera tras reiniciar RabbitMQ.
+    state["channel"], state["queue"] = channel, queue
     state["amqp"] = connection
     log("rabbitmq.ready", queue=QUEUE)
 
@@ -213,18 +221,23 @@ async def lifespan(_app):
 app = FastAPI(title=SERVICE, lifespan=lifespan)
 
 
-async def db_ok():
+async def db_check():
+    """(ok, latencia_ms) de MongoDB."""
     if state["client"] is None:
-        return False
+        return False, None
     try:
+        t0 = time.monotonic()
         await asyncio.wait_for(state["client"].admin.command("ping"), timeout=2)
-        return True
+        return True, round((time.monotonic() - t0) * 1000)
     except Exception:  # noqa: BLE001
-        return False
+        return False, None
 
 
 def rabbitmq_ok():
-    return state["amqp"] is not None and not state["amqp"].is_closed
+    # Igual que Usuarios: mientras connect_robust reconecta, la conexión no está lista.
+    amqp = state["amqp"]
+    return (amqp is not None and not amqp.is_closed
+            and amqp.connected.is_set() and not amqp.reconnecting)
 
 
 def db_unavailable():
@@ -233,12 +246,22 @@ def db_unavailable():
 
 @app.get("/health")
 async def health():
-    db, mq = await db_ok(), rabbitmq_ok()
+    """Formato común de /health (docs/arquitectura.md, sección 7): 200 solo si BD y RabbitMQ están bien."""
+    (db, latencia), mq = await db_check(), rabbitmq_ok()
+    details = {}
+    if db and state["articles"] is not None:
+        try:
+            details["articles_indexed"] = await state["articles"].estimated_document_count()
+        except Exception:  # noqa: BLE001
+            pass
     body = {
         "status": "ok" if db and mq else "unavailable",
         "service": SERVICE,
-        "database": "connected" if db else "disconnected",
-        "rabbitmq": "connected" if mq else "disconnected",
+        "checks": {
+            "db": {"status": "ok" if db else "error", "engine": "mongodb", "latency_ms": latencia},
+            "rabbitmq": {"status": "ok" if mq else "error"},
+        },
+        "details": details,
     }
     return JSONResponse(body, status_code=200 if db and mq else 503)
 

@@ -21,11 +21,12 @@ public record ArticleClassifiedEvent(
             String title,
             String summary,
             String source,
+            String sourceId,   // opcional (docs/eventos.md, 3.5)
             Instant publishedAt,
             Instant ingestedAt,
             String imageUrl,
             String category,
             List<String> tags,
-            double score) {
+            Double score) {
     }
 }

@@ -1,11 +1,27 @@
 # newsproject — Agregador de Noticias
 
-Agregador de noticias con microservicios (Sistemas Distribuidos, UNL). Ingesta obtiene artículos de fuentes RSS y sitios web, Clasificación les asigna categoría con TF-IDF + un clasificador de scikit-learn, Búsqueda los indexa y Notificaciones avisa en tiempo real a cada usuario según sus preferencias. Los servicios solo se comunican por eventos en RabbitMQ.
+Agregador de noticias con microservicios (Sistemas Distribuidos, UNL). Ingesta lee fuentes RSS cada 5 minutos, Clasificación asigna a cada noticia una categoría con TF-IDF + regresión logística, Búsqueda las indexa y Notificaciones avisa en tiempo real a cada usuario, por WebSocket, de lo que coincide con sus intereses. Los servicios solo se comunican por eventos en RabbitMQ.
 
 - Arquitectura completa: [`docs/arquitectura.md`](docs/arquitectura.md)
 - Contrato de eventos: [`docs/eventos.md`](docs/eventos.md) — **léanlo antes de programar**
 
 ![Arquitectura](docs/img/arquitectura.png)
+
+*Cada flecha indica su ruta, evento o cola. Fuente editable: [`docs/img/arquitectura.svg`](docs/img/arquitectura.svg).*
+
+## Qué hace
+
+- **Cuentas:** registro con correo, contraseña, nombres, apellidos y username; inicio de sesión con JWT. Dos roles: **administrador** (agrega fuentes, las scrapea y ve el panel del sistema) y **usuario**.
+- **Feed en vivo:** las noticias que coinciden con las categorías y palabras clave del usuario llegan por WebSocket sin recargar, con su latencia. Al elegir intereses, el feed se llena con las noticias recientes que ya coincidían.
+- **Fuentes por usuario:** cada usuario apaga las fuentes que no quiere ver en su feed.
+- **Búsqueda** con y sin tildes, por categoría.
+- **Panel del sistema** (solo admin): estado de cada microservicio con su base de datos y sus colas.
+
+| Feed (bandeja en dos paneles) | Panel del sistema (admin) |
+|---|---|
+| ![Feed](docs/capturas/feed.png) | ![Panel](docs/capturas/panel-admin.png) |
+| **Fuentes del administrador** | **Fuentes de un usuario** |
+| ![Fuentes admin](docs/capturas/fuentes-admin.png) | ![Fuentes usuario](docs/capturas/fuentes-usuario.png) |
 
 ## Servicios
 
@@ -13,17 +29,17 @@ Cada microservicio de negocio es **un contenedor con su backend y su base de dat
 
 | Servicio | Carpeta | Responsable | Tecnología | Base de datos (mismo contenedor) | Publica | Consume |
 |---|---|---|---|---|---|---|
-| Ingesta | `ingesta/` | Kevin | Python · FastAPI | MongoDB | `article.ingested` | — |
+| Ingesta | `ingesta/` | Kevin | Python · FastAPI · feedparser | MongoDB | `article.ingested` | — |
 | Clasificación | `clasificacion/` | Fabricio | Python · FastAPI · scikit-learn | PostgreSQL | `article.classified` | `article.ingested` |
 | Búsqueda | `busqueda/` | Fabricio | Python · FastAPI | MongoDB | — | `article.classified` |
-| Usuarios | `usuarios/` | Ariana | Python · FastAPI | PostgreSQL | `user.preferences.updated` | — |
+| Usuarios | `usuarios/` | Ariana | Python · FastAPI · bcrypt · PyJWT | PostgreSQL | `user.preferences.updated` | — |
 | Notificaciones | `notificaciones/` | Ariel | Java 21 · Spring Boot | PostgreSQL | — | `article.classified`, `user.preferences.updated` |
-| API Gateway | `gateway/` | Ariana | Python · FastAPI | — | — | — |
+| API Gateway | `gateway/` | Ariana | Python · FastAPI · httpx · websockets | — | — | — |
 | Frontend | `frontend/` | Todos | React · Vite · Nginx | — | — | — |
 
 ## Requisitos
 
-- Docker y Docker Compose v2 (`docker compose version`)
+- Docker y Docker Compose v2 (`docker compose version`). En Linux, tu usuario debe estar en el grupo `docker`.
 - Git
 
 ## Cómo levantar todo
@@ -35,28 +51,64 @@ cp .env.example .env          # luego cambia las claves dentro de .env
 docker compose up -d --build
 ```
 
-La primera vez tarda varios minutos porque construye las imágenes. Al terminar:
+La primera vez tarda varios minutos porque construye las imágenes. En `.env`, además de las claves de RabbitMQ y de cada base de datos:
+
+| Variable | Para qué sirve |
+|---|---|
+| `JWT_SECRET` | Firma los tokens de sesión (solo Usuarios y el gateway). Usa 32 o más caracteres aleatorios: `python3 -c "import secrets; print(secrets.token_urlsafe(48))"` |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_USERNAME` | Primer administrador; Usuarios lo crea al arrancar si no existe |
+| `RABBITMQ_MONITOR_USER`, `RABBITMQ_MONITOR_PASS` | Usuario de RabbitMQ de solo lectura para el panel del sistema |
+| `INGESTA_SCRAPING_INTERVAL_MINUTES` | Cada cuántos minutos Ingesta revisa las fuentes (5) |
+| `NOTIFICACIONES_ALERTS_RETENTION_DAYS` | Días que se conservan las alertas (7) |
+| `CLASIFICACION_MIN_SCORE` | Confianza mínima; por debajo, la noticia queda en `otros` (0.5) |
+
+Si falta una variable obligatoria, `docker compose` se detiene con un mensaje como `Falta JWT_SECRET en .env (ver .env.example)`.
 
 | Recurso | Dirección |
 |---|---|
-| Frontend | http://localhost:3000 |
-| API Gateway | http://localhost:8080 (por ejemplo `http://localhost:8080/health`) |
-| Panel de RabbitMQ | http://localhost:15672 (usuario y clave del `.env`) |
+| Aplicación | http://localhost:3000 |
+| API Gateway | http://localhost:8080 (por ejemplo `http://localhost:8080/api/status`) |
+| Panel de RabbitMQ | http://localhost:15672 (`RABBITMQ_USER` / `RABBITMQ_PASS` del `.env`) |
 | RabbitMQ (AMQP, solo desarrollo) | `localhost:5672` |
 
-### Verificar que todo está bien
+## Uso
+
+1. Entra a http://localhost:3000 y crea una cuenta en **Crear cuenta**. Al registrarte eliges tus categorías y palabras clave; al guardar vas al **Feed**, que ya trae las noticias recientes que coinciden.
+2. En **Fuentes** apaga las que no quieras ver («En mi feed»). Las fuentes se revisan solas cada 5 minutos y las noticias nuevas llegan al Feed sin recargar.
+3. Para administrar, inicia sesión con `ADMIN_EMAIL` / `ADMIN_PASSWORD`. El administrador ve además **Agregar fuente**, **Scrapear** y el **Panel**.
+
+| Página | Usuario | Administrador |
+|---|---|---|
+| Iniciar sesión · Crear cuenta | ✓ | ✓ |
+| Feed: pestañas Nuevas y Leídas, detalle y latencia | ✓ | ✓ |
+| Buscar: texto, categoría y detalle | ✓ | ✓ |
+| Fuentes: lista con último estado e interruptor «En mi feed» | ✓ | ✓ |
+| Fuentes: agregar fuente y «Scrapear» | — | ✓ |
+| Preferencias: categorías, palabras clave y notificaciones | ✓ | ✓ |
+| Panel del sistema: servicios, BD, colas e infraestructura | — | ✓ |
+
+Para la demo de la sección 11 de `docs/arquitectura.md`, empieza desde cero (`docker compose down -v && docker compose up -d --build`) y, como administrador, agrega una fuente nueva y scrapéala: sus noticias son nuevas y llegan en vivo al feed del usuario.
+
+## Verificar que todo está bien
 
 ```bash
 docker compose ps -a
 ```
 
-- Los servicios `ingesta`, `clasificacion`, `busqueda`, `usuarios`, `notificaciones`, `gateway` y `rabbitmq` deben aparecer como `healthy`.
-- `newsproject-rabbitmq-init` debe aparecer como `Exited (0)`: corre una vez para cargar las colas y termina.
+- `ingesta`, `clasificacion`, `busqueda`, `usuarios`, `notificaciones`, `gateway` y `rabbitmq` deben aparecer como `healthy`.
+- `newsproject-rabbitmq-init` debe aparecer como `Exited (0)`: corre una vez para cargar las colas y crear el usuario de monitoreo.
 
 ```bash
-docker logs newsproject-rabbitmq-init                                  # termina con "Definiciones importadas"
+docker logs newsproject-rabbitmq-init                                  # "Definiciones importadas" y "Usuario de monitoreo listo"
 docker exec newsproject-rabbitmq rabbitmqctl list_queues name type     # 8 colas quorum
+curl -s localhost:8080/api/status                                      # "status": "ok" en los 5 servicios
 ```
+
+O, como administrador, abre **Panel** en la aplicación: cada servicio debe estar en verde.
+
+### Pruebas automáticas
+
+`verificacion/scripts/` tiene las pruebas del sistema completo: API por el gateway, eventos en RabbitMQ, la app con Playwright y tolerancia a fallos. Cada ejecución guarda su informe, logs y capturas en `verificacion/ejecuciones/<fecha_hora>/` (no se versiona). Instrucciones en [`verificacion/README.md`](verificacion/README.md).
 
 ### Entrar a la base de datos de un servicio
 
@@ -67,33 +119,25 @@ docker exec -it newsproject-clasificacion psql -U <CLASIFICACION_DB_USER> clasif
 docker exec -it newsproject-ingesta mongosh -u <INGESTA_DB_USER> -p <INGESTA_DB_PASS>
 ```
 
-## Cómo trabajar en tu servicio
+## Reglas para desarrollar un servicio
 
-Cada carpeta trae una **plantilla base** que ya funciona dentro del `docker compose` y solo responde `GET /health`. Reemplázala por tu implementación sin cambiar la estructura:
+1. El backend lee su configuración del entorno (`DATABASE_URL`, `RABBITMQ_URL` o `SPRING_*` en Notificaciones); nunca credenciales en el código.
+2. Reintenta la conexión a la BD y a RabbitMQ al arrancar, con espera creciente.
+3. `GET /health` responde 200 solo si la BD y RabbitMQ están conectados, con el formato común (`checks.db`, `checks.rabbitmq`, `details`) que lee el panel del sistema.
+4. Sigue `docs/eventos.md`: sobre común, publicación persistente, prefetch 10, `ack` manual después de guardar, idempotencia por `article_id` o `user_id` y mensajes inválidos a la `.dlq`.
+5. No declares colas ni exchanges en el código (los crea `rabbitmq-init`).
+6. Ningún servicio llama a otro por REST; solo publica o consume eventos. El gateway valida el JWT y pasa al servicio `X-User-Id` y `X-User-Role`.
 
-| Archivo | Para qué sirve |
-|---|---|
-| `Dockerfile` | Imagen con tu backend y tu BD (PostgreSQL o MongoDB) |
-| `supervisord.conf` | Arranca dos procesos: `db` (la BD, solo en localhost) y `api` (tu backend) |
-| `app/main.py` o `src/...` | Tu código; ya tiene el endpoint `/health` |
-
-Reglas para todos los servicios:
-
-1. Tu backend lee `DATABASE_URL` y `RABBITMQ_URL` (o las variables `SPRING_*` en Notificaciones) del entorno; no escribas credenciales en el código.
-2. Reintenta la conexión a la BD y a RabbitMQ al arrancar: la BD puede tardar unos segundos en estar lista.
-3. `/health` debe responder 200 solo cuando la BD y RabbitMQ estén conectados.
-4. Sigue el contrato de `docs/eventos.md`: `ack` manual, idempotencia por `article_id` o `user_id`, y `nack` para enviar a la `.dlq`.
-5. Ningún servicio llama a otro por REST; solo publica o consume eventos.
-
-Para probar tu servicio fuera de Docker (por ejemplo con `uvicorn --reload`), levanta solo el broker con `docker compose up -d rabbitmq rabbitmq-init`; el puerto 5672 se publica desde `docker-compose.override.yml`.
+Para probar un servicio fuera de Docker (por ejemplo con `uvicorn --reload`), levanta solo el broker con `docker compose up -d rabbitmq rabbitmq-init`; el puerto 5672 se publica desde `docker-compose.override.yml`.
 
 ## Dataset de Clasificación
 
-El modelo de Clasificación (TF-IDF + Naive Bayes o regresión logística) se entrena con noticias etiquetadas por la **sección** del medio: todo lo del feed de deportes es `deportes`.
+El modelo de Clasificación (TF-IDF + regresión logística, en `clasificacion/model/`) se entrenó con noticias etiquetadas por la **sección** del medio: todo lo del feed de deportes es `deportes`.
 
 - `clasificacion/data/feeds.csv`: feeds por sección, con su categoría y país (`EC`, `ES`, `AR`).
 - `clasificacion/tools/collect_dataset.py`: lee los feeds y agrega las noticias nuevas sin duplicar.
-- `.github/workflows/dataset.yml`: GitHub Actions lo ejecuta cada hora y guarda `dataset.csv` en la rama `dataset` (no en `main`).
+- `clasificacion/tools/train.py`: entrena el modelo y guarda sus métricas (`GET /api/model`).
+- `.github/workflows/dataset.yml`: GitHub Actions ejecuta el recolector cada hora y guarda `dataset.csv` en la rama `dataset` (no en `main`).
 
 ```bash
 # Traer el dataset acumulado
@@ -114,24 +158,33 @@ Ingesta arma el texto de cada noticia con las mismas funciones que el recolector
 - Antes de empezar, trae lo último de `main`: `git checkout <tu-rama> && git merge main`.
 - Los cambios llegan a `main` por pull request revisado por otro integrante.
 - Antes de cada merge, `docker compose up -d --build` debe levantar el sistema completo.
-- Los contratos de eventos y de REST solo cambian por pull request aprobado por los cuatro.
+- Los contratos de eventos y de REST (`docs/eventos.md`, `docs/arquitectura.md` secciones 5 a 7) solo cambian por pull request aprobado por los cuatro.
 - Un solo release al final: `v1.0`. No se crean releases intermedios.
 
 ## Problemas comunes
 
+**`docker compose` dice «Falta JWT_SECRET en .env» (o `ADMIN_PASSWORD`, `RABBITMQ_MONITOR_PASS`).**
+Tu `.env` es de una versión anterior. Copia las variables nuevas desde `.env.example`.
+
 **Las colas no son de tipo quorum o `rabbitmq-init` falla.**
-Una cola existente no cambia de tipo. Si ya habías levantado la versión anterior, borra los volúmenes (se pierden los datos locales):
+Una cola existente no cambia de tipo. Si ya habías levantado una versión anterior, borra los volúmenes (se pierden los datos locales):
 
 ```bash
 docker compose down -v
 docker compose up -d --build
 ```
 
+**El panel del sistema muestra un servicio «Con problemas» por su DLQ.**
+Hay mensajes que no se pudieron procesar (por ejemplo, los de la prueba del mensaje envenenado). Revísalos en el panel de RabbitMQ y, si no sirven, vacía la cola: `docker exec newsproject-rabbitmq rabbitmqctl purge_queue <cola>.dlq`.
+
+**No puedo entrar con una cuenta antigua.**
+Las cuentas de antes del registro con contraseña no tienen clave. Crea una cuenta nueva o empieza desde cero con `docker compose down -v`.
+
 **Un servicio queda en `unhealthy`.**
 Revisa sus logs: `docker compose logs -f <servicio>`. En los logs aparecen los dos procesos (`db` y `api`).
 
 **Error de puerto ocupado (3000, 8080, 5672, 15672).**
-Detén el programa que usa ese puerto o cambia el puerto de la izquierda en `docker-compose.yml` (por ejemplo `"8081:8000"`).
+Detén el programa que usa ese puerto (por ejemplo, otro RabbitMQ) o cambia el puerto de la izquierda en `docker-compose.yml` (por ejemplo `"8081:8000"`).
 
 **RabbitMQ aparece como no saludable justo después de arrancar.**
 Espera 20 a 30 segundos la primera vez y vuelve a ejecutar `docker compose ps -a`.
@@ -144,5 +197,5 @@ docker compose logs -f <servicio>   # ver logs
 docker compose stop <servicio>      # detener un servicio (prueba de tolerancia a fallos)
 docker compose start <servicio>     # volver a iniciarlo
 docker compose down                 # detener (conserva datos)
-docker compose down -v              # detener y borrar datos
+docker compose down -v              # detener y borrar datos (usuarios, fuentes, alertas, colas)
 ```

@@ -28,15 +28,17 @@ public class PreferencesRepository {
      * @return true si se guardo; false si el evento era mas antiguo (descartado)
      */
     public boolean upsert(UUID userId, List<String> categories, List<String> keywords,
-                          boolean enabled, Instant occurredAt) {
+                          boolean enabled, List<String> disabledSources, Instant occurredAt) {
         String sql = """
                 INSERT INTO preferences
-                    (user_id, categories, keywords, notifications_enabled, occurred_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, now())
+                    (user_id, categories, keywords, notifications_enabled, disabled_sources,
+                     occurred_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, now())
                 ON CONFLICT (user_id) DO UPDATE SET
                     categories = EXCLUDED.categories,
                     keywords = EXCLUDED.keywords,
                     notifications_enabled = EXCLUDED.notifications_enabled,
+                    disabled_sources = EXCLUDED.disabled_sources,
                     occurred_at = EXCLUDED.occurred_at,
                     updated_at = now()
                 WHERE preferences.occurred_at <= EXCLUDED.occurred_at
@@ -47,7 +49,8 @@ public class PreferencesRepository {
             ps.setArray(2, con.createArrayOf("text", categories.toArray()));
             ps.setArray(3, con.createArrayOf("text", keywords.toArray()));
             ps.setBoolean(4, enabled);
-            ps.setObject(5, OffsetDateTime.ofInstant(occurredAt, ZoneOffset.UTC));
+            ps.setArray(5, con.createArrayOf("text", disabledSources.toArray()));
+            ps.setObject(6, OffsetDateTime.ofInstant(occurredAt, ZoneOffset.UTC));
             return ps;
         });
         return rows > 0;
@@ -56,13 +59,14 @@ public class PreferencesRepository {
     /** Usuarios con las notificaciones activadas. */
     public List<UserPreferences> findEnabled() {
         return jdbc.query(
-                "SELECT user_id, categories, keywords, notifications_enabled "
+                "SELECT user_id, categories, keywords, notifications_enabled, disabled_sources "
                         + "FROM preferences WHERE notifications_enabled",
                 (rs, i) -> new UserPreferences(
                         rs.getObject("user_id", UUID.class),
                         toList(rs.getArray("categories")),
                         toList(rs.getArray("keywords")),
-                        rs.getBoolean("notifications_enabled")));
+                        rs.getBoolean("notifications_enabled"),
+                        toList(rs.getArray("disabled_sources"))));
     }
 
     static List<String> toList(Array array) throws java.sql.SQLException {

@@ -8,5 +8,6 @@ public record UserPreferences(
         UUID userId,
         List<String> categories,
         List<String> keywords,
-        boolean notificationsEnabled) {
+        boolean notificationsEnabled,
+        List<String> disabledSources) {
 }

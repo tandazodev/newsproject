@@ -19,7 +19,7 @@ public class AlertRepository {
 
     private static final String COLUMNS = """
             notification_id, user_id, article_id, title, summary, source, category, tags,
-            url, image_url, ingested_at, sent_at, is_read
+            url, image_url, ingested_at, sent_at, is_read, backfill, source_id
             """;
 
     private static final RowMapper<StoredAlert> MAPPER = AlertRepository::map;
@@ -39,8 +39,8 @@ public class AlertRepository {
     public boolean insertIfAbsent(StoredAlert a) {
         String sql = """
                 INSERT INTO alerts (notification_id, user_id, article_id, title, summary, source,
-                    category, tags, url, image_url, ingested_at, sent_at, is_read)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE)
+                    category, tags, url, image_url, ingested_at, sent_at, is_read, backfill, source_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)
                 ON CONFLICT (user_id, article_id) DO NOTHING
                 """;
         int rows = jdbc.update(con -> {
@@ -57,6 +57,8 @@ public class AlertRepository {
             ps.setString(10, a.imageUrl());
             ps.setObject(11, a.ingestedAt() == null ? null : OffsetDateTime.ofInstant(a.ingestedAt(), ZoneOffset.UTC));
             ps.setObject(12, OffsetDateTime.ofInstant(a.sentAt(), ZoneOffset.UTC));
+            ps.setBoolean(13, a.backfill());
+            ps.setString(14, a.sourceId());
             return ps;
         });
         return rows > 0;
@@ -82,6 +84,24 @@ public class AlertRepository {
         return findById(notificationId);
     }
 
+    /** Borra las alertas indicadas; devuelve cuántas se borraron. */
+    public int deleteAll(List<UUID> notificationIds) {
+        if (notificationIds.isEmpty()) {
+            return 0;
+        }
+        return jdbc.update(con -> {
+            PreparedStatement ps = con.prepareStatement("DELETE FROM alerts WHERE notification_id = ANY(?)");
+            ps.setArray(1, con.createArrayOf("uuid", notificationIds.toArray()));
+            return ps;
+        });
+    }
+
+    /** Retención: borra las alertas enviadas hace más de `age`. */
+    public int deleteOlderThan(java.time.Duration age) {
+        return jdbc.update("DELETE FROM alerts WHERE sent_at < ?",
+                OffsetDateTime.ofInstant(Instant.now().minus(age), ZoneOffset.UTC));
+    }
+
     private static StoredAlert map(ResultSet rs, int i) throws SQLException {
         return new StoredAlert(
                 rs.getObject("notification_id", UUID.class),
@@ -96,7 +116,9 @@ public class AlertRepository {
                 rs.getString("image_url"),
                 toInstant(rs.getObject("ingested_at", OffsetDateTime.class)),
                 toInstant(rs.getObject("sent_at", OffsetDateTime.class)),
-                rs.getBoolean("is_read"));
+                rs.getBoolean("is_read"),
+                rs.getBoolean("backfill"),
+                rs.getString("source_id"));
     }
 
     private static Instant toInstant(OffsetDateTime value) {

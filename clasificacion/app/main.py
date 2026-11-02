@@ -13,6 +13,7 @@ igual, pero cada artículo se clasifica como "otros" con score 0.0.
 import asyncio
 import json
 import os
+import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -96,8 +97,8 @@ RETURNING article_id
 """
 
 # Estado compartido del proceso; lo llena el arranque en segundo plano.
-state = {"pool": None, "amqp": None, "exchange": None, "model": None, "model_version": None,
-         "metrics": None}
+state = {"pool": None, "amqp": None, "channel": None, "queue": None, "exchange": None, "model": None,
+         "model_version": None, "metrics": None}
 
 
 def utc_now():
@@ -278,6 +279,7 @@ async def publish_classified(event, p, summary, image_url, category, tags, score
             "title": p["title"],
             "summary": summary,
             "source": p["source"],
+            "source_id": p.get("source_id"),  # opcional; se copia tal cual (eventos.md 3.5)
             "published_at": p["published_at"],
             "ingested_at": event["occurred_at"],
             "image_url": image_url,
@@ -314,6 +316,9 @@ async def startup():
     state["exchange"] = await channel.get_exchange(EXCHANGE)
     queue = await channel.declare_queue(QUEUE, passive=True)
     await queue.consume(on_message)
+    # aio-pika guarda en un WeakSet las colas que restaura al reconectar: sin una
+    # referencia fuerte, el consumidor no se recupera tras reiniciar RabbitMQ.
+    state["channel"], state["queue"] = channel, queue
     state["amqp"] = connection
     log("rabbitmq.ready", queue=QUEUE)
 
@@ -333,30 +338,45 @@ async def lifespan(_app):
 app = FastAPI(title=SERVICE, lifespan=lifespan)
 
 
-async def db_ok():
+async def db_check():
+    """(ok, latencia_ms) de PostgreSQL."""
     if state["pool"] is None:
-        return False
+        return False, None
     try:
+        t0 = time.monotonic()
         async with state["pool"].acquire(timeout=2) as conn:
             await conn.fetchval("SELECT 1")
-        return True
+        return True, round((time.monotonic() - t0) * 1000)
     except Exception:  # noqa: BLE001
-        return False
+        return False, None
 
 
 def rabbitmq_ok():
-    return state["amqp"] is not None and not state["amqp"].is_closed
+    # Igual que Usuarios: mientras connect_robust reconecta, la conexión no está lista.
+    amqp = state["amqp"]
+    return (amqp is not None and not amqp.is_closed
+            and amqp.connected.is_set() and not amqp.reconnecting)
 
 
 @app.get("/health")
 async def health():
-    db, mq = await db_ok(), rabbitmq_ok()
+    """Formato común de /health (docs/arquitectura.md, sección 7): 200 solo si BD y RabbitMQ están bien."""
+    (db, latencia), mq = await db_check(), rabbitmq_ok()
+    metrics = state["metrics"] or {}
     body = {
         "status": "ok" if db and mq else "unavailable",
         "service": SERVICE,
-        "database": "connected" if db else "disconnected",
-        "rabbitmq": "connected" if mq else "disconnected",
-        "model": "loaded" if state["model"] is not None else "missing",
+        "checks": {
+            "db": {"status": "ok" if db else "error", "engine": "postgresql", "latency_ms": latencia},
+            "rabbitmq": {"status": "ok" if mq else "error"},
+        },
+        "details": {
+            "model": "loaded" if state["model"] is not None else "missing",
+            "model_version": state["model_version"],
+            "algorithm": metrics.get("algorithm"),
+            "f1_macro": metrics.get("f1_macro"),
+            "min_score": MIN_SCORE,
+        },
     }
     return JSONResponse(body, status_code=200 if db and mq else 503)
 

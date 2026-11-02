@@ -24,12 +24,13 @@ public record NotificationMessage(String type, Data data) {
             String url,
             String imageUrl,
             Instant ingestedAt,
-            Instant sentAt) {
+            Instant sentAt,
+            boolean backfill) {   // opcional en el contrato: true si es del relleno inicial
     }
 
     public static NotificationMessage newArticle(StoredAlert a) {
         return new NotificationMessage(NEW_ARTICLE, new Data(
                 a.notificationId(), a.articleId(), a.title(), a.summary(), a.source(),
-                a.category(), a.tags(), a.url(), a.imageUrl(), a.ingestedAt(), a.sentAt()));
+                a.category(), a.tags(), a.url(), a.imageUrl(), a.ingestedAt(), a.sentAt(), a.backfill()));
     }
 }
