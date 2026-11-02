@@ -29,6 +29,15 @@ El diagrama muestra los 9 contenedores y **cada flecha lleva su detalle** (ruta,
 - **Gateway → servicios (gris):** valida el JWT y los permisos (sección 7.1) y enruta por prefijo; cada flecha indica las rutas de ese servicio. Con Notificaciones además mantiene el WebSocket interno (`/ws?user_id=` tomado del token). Para el panel del administrador consulta la API de gestión de RabbitMQ con un usuario de solo monitoreo (morado).
 - **Servicios ↔ RabbitMQ (colores por evento):** flecha hacia RabbitMQ = el servicio publica en `newsproject.events`; desde RabbitMQ = consume su cola (prefetch 10, `ack` manual). Dentro de RabbitMQ, cada *binding* lleva el evento a su cola y un mensaje inválido o que falla 3 veces pasa a su `.dlq` por `newsproject.dlx`.
 - **Cada caja de servicio** es un contenedor con su backend y su BD, que solo escucha en `localhost`. Ingesta es el único que sale a internet (feeds RSS cada 5 minutos); `rabbitmq-init` carga la topología y crea el usuario de monitoreo al arrancar.
+- **Tipo de comunicación:** cada flecha lleva además una etiqueta con su tipo: **síncrona REST/HTTP** (petición-respuesta, a través de Nginx y el gateway), **síncrona HTTP** fuera del flujo de negocio (feeds RSS, imágenes, API de gestión de RabbitMQ), **asíncrona AMQP** (eventos por RabbitMQ, el middleware orientado a mensajes: el emisor no espera al receptor), **tiempo real WebSocket** (el servidor empuja las alertas), **local** (servicio y su BD en el mismo contenedor) e **interna del broker** (bindings y dead-letter). Los tres middleware son Nginx (proxy inverso), el API Gateway y RabbitMQ.
+
+### 2.1 Diagrama de componentes (UML)
+
+![Diagrama de componentes UML del Agregador de Noticias](img/uml-componentes.png)
+
+La misma arquitectura en notación UML de componentes: cada componente lleva su estereotipo (`«microservicio»`, `«middleware orientado a mensajes (MOM)»`, `«componente · middleware (API Gateway)»`…), cada interfaz que ofrece se dibuja como un círculo (*lollipop*) y cada flecha punteada es una dependencia de quien usa a quien ofrece, con su estereotipo (`«REST»`, `«WebSocket»`, `«publica»`, `«consume»`, `«HTTP»`) y el color de su tipo de comunicación. Por eso `«publica»` y `«consume»` apuntan ambas a RabbitMQ: los dos servicios dependen del broker, aunque el dato vaya en sentidos opuestos. Las notas resumen el reparto del modo distribuido (sección 8.1) y las reglas de comunicación.
+
+Fuente editable: [`img/uml-componentes.svg`](img/uml-componentes.svg), generada con `img/genera_uml.py`. **Los dos diagramas describen el mismo sistema:** si cambia un servicio, una ruta, un evento o un tipo de comunicación, actualiza `genera_arquitectura.py` y `genera_uml.py` y vuelve a exportar los dos PNG (el comando está al inicio de cada script).
 
 ## 3. Microservicios, bases de datos y responsables
 
@@ -459,6 +468,27 @@ Fragmento de `docker-compose.yml`:
 * **Tolerancia al arrancar:** el gateway depende de los servicios con `service_started`, no `service_healthy`: si uno falla, el gateway arranca igual y responde `503` solo en sus rutas. Nginx del frontend resuelve `gateway` en cada petición (DNS interno de Docker), así que arranca aunque el gateway esté detenido y devuelve `503` en JSON si no responde.
 * **Base verificada:** el 25/10/2026, `docker compose up -d --build` en `main` levantó los 9 contenedores, con los servicios `healthy`, `rabbitmq-init` en `Exited (0)` y las 8 colas de tipo quorum. El 01/11/2026 la verificación final del sistema completo (registro y roles, eventos, demo desde la app con Playwright y tolerancia a fallos) pasó 134 de 134 pruebas; los scripts están en `verificacion/scripts/`. Para correrlo hace falta `cp .env.example .env` (con `JWT_SECRET`, `ADMIN_*` y `RABBITMQ_MONITOR_*`) y, en Linux, que el usuario esté en el grupo `docker`.
 
+### 8.1 Modo distribuido en 4 PCs (opcional)
+
+Todo lo anterior describe el modo de una PC, que sigue siendo el principal. Como alternativa, el mismo sistema se puede repartir en 4 PCs Linux, por switch (LAN) o por Tailscale, con `docker-compose.distribuido.yml` (proyecto `newsproject-dist`) y `deploy/levantar.sh <switch|tailscale>`. No cambia el contrato de eventos ni las APIs: solo dónde corre cada contenedor y cómo se encuentran.
+
+| PC | Perfiles | Puertos publicados en su IP |
+| --- | --- | --- |
+| pc1 | `entrada` (gateway + frontend), `usuarios` | 8080, 3000, 8004 |
+| pc2 | `ingesta` | 8001 |
+| pc3 | `clasificacion`, `busqueda` | 8002, 8003 |
+| pc4 | `broker` (RabbitMQ + `rabbitmq-init`), `notificaciones` | 5672, 15672, 8005 |
+
+Diferencias con el modo de una PC:
+
+- **Direcciones:** los servicios llegan a RabbitMQ por la IP de pc4 y el gateway llega a cada servicio por la IP de su PC; Nginx sigue hablando con el gateway por el DNS de Docker porque están en la misma PC. Las IPs vienen de `.env.switch` o `.env.tailscale`, y cada puerto se publica solo en la IP de su PC.
+- **Arranque:** no hay `depends_on` entre PCs. Cada servicio reintenta toda su preparación de RabbitMQ (conexión, exchange, cola y consumidor) hasta que pc4 y `rabbitmq-init` están listos.
+- **Token interno:** como los servicios quedan publicados en la red, el gateway envía `X-Internal-Token` (variable `INTERNAL_TOKEN`, que toma el valor de `DISTRIBUTED_INTERNAL_TOKEN`) en REST, `/health` y el WebSocket, y cada servicio responde `403` si no coincide; `GET /health` queda libre. En el modo de una PC la variable está vacía y no cambia nada.
+- **Datos:** cada PC guarda solo las bases de datos de sus servicios, en volúmenes `newsproject-dist_*`, separados de los del modo de una PC.
+- **Verificación:** `deploy/revisar_red.sh <switch|tailscale>` revisa el alcance de cada PC, el puerto de cada componente y su `/health`; los scripts de `verificacion/scripts/` aceptan `NP_GATEWAY`, `NP_AMQP_URL` y otras variables para apuntar al modo distribuido.
+
+Pasos completos, orden de pruebas y problemas comunes: [`docs/despliegue-distribuido.md`](despliegue-distribuido.md).
+
 ## 9. Estructura del repositorio y flujo Git
 
 Un solo repositorio ([YooneR1209/newsproject](https://github.com/YooneR1209/newsproject)) con una carpeta por servicio y la infraestructura compartida en `infra/`.
@@ -476,6 +506,8 @@ newsproject/
 │   ├── arquitectura.md           (este documento)
 │   ├── eventos.md                (contrato de eventos, sección 5)
 │   ├── img/arquitectura.png      (diagrama; fuente editable arquitectura.svg y genera_arquitectura.py)
+│   ├── img/uml-componentes.png   (diagrama de componentes UML; fuente uml-componentes.svg y genera_uml.py)
+│   ├── despliegue-distribuido.md (modo distribuido en 4 PCs)
 │   ├── capturas/                 (pantallas de la app para el README)
 │   └── declaratoria-ia.pdf
 ├── infra/

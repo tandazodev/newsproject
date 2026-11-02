@@ -158,7 +158,8 @@ def test_build_search_with_q_uses_text_score():
 def test_to_item_formats_dates_and_keeps_contract_fields():
     _, doc = parse_message(event_with())
     item = to_item(doc)
-    assert set(item) == {"article_id", "title", "summary", "url", "source", "category",
+    # source_id: docs/eventos.md, sección 3.5 (Búsqueda lo guarda y lo devuelve)
+    assert set(item) == {"article_id", "title", "summary", "url", "source", "source_id", "category",
                          "tags", "published_at", "image_url"}
     assert item["published_at"] == "2026-10-26T10:00:00Z"
 
@@ -168,7 +169,11 @@ def test_to_item_formats_dates_and_keeps_contract_fields():
 def test_health_without_connections_is_503():
     response = client.get("/health")
     assert response.status_code == 503
-    assert response.json()["database"] == "disconnected"
+    # Formato común de /health (docs/arquitectura.md, sección 7)
+    body = response.json()
+    assert body["status"] == "unavailable"
+    assert body["checks"]["db"]["status"] == "error"
+    assert body["checks"]["rabbitmq"]["status"] == "error"
 
 
 def test_search_unknown_category_is_422():

@@ -9,6 +9,12 @@ Agregador de noticias con microservicios (Sistemas Distribuidos, UNL). Ingesta l
 
 *Cada flecha indica su ruta, evento o cola. Fuente editable: [`docs/img/arquitectura.svg`](docs/img/arquitectura.svg).*
 
+Cada flecha indica también su **tipo de comunicación**: síncrona (REST/HTTP), asíncrona (eventos AMQP por RabbitMQ, el middleware de mensajería), en tiempo real (WebSocket) o local (servicio y su BD). La misma arquitectura en notación UML, como diagrama de componentes con interfaces y dependencias:
+
+![Diagrama de componentes UML](docs/img/uml-componentes.png)
+
+*Fuente editable: [`docs/img/uml-componentes.svg`](docs/img/uml-componentes.svg). Los dos diagramas se generan con `docs/img/genera_arquitectura.py` y `docs/img/genera_uml.py`; si cambia la arquitectura, se actualizan ambos.*
+
 ## Qué hace
 
 - **Cuentas:** registro con correo, contraseña, nombres, apellidos y username; inicio de sesión con JWT. Dos roles: **administrador** (agrega fuentes, las scrapea y ve el panel del sistema) y **usuario**.
@@ -118,6 +124,35 @@ Las BD no publican puertos; se entra desde su contenedor:
 docker exec -it newsproject-clasificacion psql -U <CLASIFICACION_DB_USER> clasificacion
 docker exec -it newsproject-ingesta mongosh -u <INGESTA_DB_USER> -p <INGESTA_DB_PASS>
 ```
+
+## Modo distribuido en 4 PCs (opcional)
+
+Además del modo de una PC descrito arriba, el sistema se puede repartir en **4 PCs Linux** conectadas por un switch (LAN) o por Tailscale. Es opcional: no cambia `docker-compose.yml`, `.env` ni nada de lo anterior, y los dos modos usan contenedores y volúmenes distintos.
+
+| | Una PC | Distribuido |
+|---|---|---|
+| Se levanta con | `docker compose up -d --build` | `deploy/levantar.sh <switch\|tailscale>` en cada PC |
+| Compose y variables | `docker-compose.yml` · `.env` | `docker-compose.distribuido.yml` · `.env.distribuido`, `.env.switch` o `.env.tailscale`, `.env.pc` |
+| Los servicios se encuentran por | Nombres de la red interna de Docker | IP de cada PC y puertos publicados |
+| Los servicios están protegidos por | La red interna (no se publican) | Un token interno: sin el gateway responden `403` |
+| La app | `http://localhost:3000` | `http://<IP de pc1>:3000` |
+
+| PC | Qué corre | Puertos |
+|---|---|---|
+| pc1 | gateway, frontend, usuarios | 8080, 3000, 8004 |
+| pc2 | ingesta | 8001 |
+| pc3 | clasificacion, busqueda | 8002, 8003 |
+| pc4 | RabbitMQ (+ `rabbitmq-init`), notificaciones | 5672, 15672, 8005 |
+
+```bash
+cp .env.distribuido.example .env.distribuido   # claves: el mismo archivo en las 4 PCs
+cp .env.switch.example .env.switch             # IPs de las 4 PCs (o .env.tailscale)
+cp .env.pc.example .env.pc                     # PC=pc1, pc2, pc3 o pc4: distinto en cada PC
+deploy/levantar.sh switch                      # en cada PC, empezando por pc4
+deploy/revisar_red.sh switch                   # tabla OK/FALLA de red, puertos y /health
+```
+
+Guía completa, con los pasos para switch y Tailscale, el orden de pruebas y los problemas comunes: [`docs/despliegue-distribuido.md`](docs/despliegue-distribuido.md).
 
 ## Reglas para desarrollar un servicio
 

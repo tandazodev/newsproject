@@ -27,3 +27,9 @@ target/
 clasificacion/data/dataset.csv
 
 verificacion/ejecuciones
+
+# Modo distribuido: copias reales (los .example sí se suben)
+.env.distribuido
+.env.switch
+.env.tailscale
+.env.pc

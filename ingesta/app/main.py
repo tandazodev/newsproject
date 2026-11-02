@@ -1,9 +1,10 @@
 # main.py
 import logging
+import secrets
 import asyncio
 import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, BackgroundTasks, status
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import HttpUrl
 from bson import ObjectId
@@ -69,6 +70,19 @@ async def lifespan(app: FastAPI):
     await close_mongo_connection()
 
 app = FastAPI(title="Módulo Ingesta API", version="1.0.0", lifespan=lifespan)
+
+
+# Modo distribuido (docker-compose.distribuido.yml): el puerto del servicio queda publicado en la
+# red, así que con INTERNAL_TOKEN definido solo se aceptan peticiones que traigan el mismo valor en
+# X-Internal-Token (lo pone el gateway). Vacío (modo de una PC) = sin cambios. /health queda libre
+# para diagnosticar la red.
+@app.middleware("http")
+async def internal_token(request: Request, call_next):
+    if settings.INTERNAL_TOKEN and request.url.path != "/health":
+        sent = request.headers.get("x-internal-token", "")
+        if not secrets.compare_digest(sent.encode(), settings.INTERNAL_TOKEN.encode()):
+            return JSONResponse({"detail": "token interno inválido"}, status_code=403)
+    return await call_next(request)
 
 @app.get("/api/sources", response_model=list[SourceResponse])
 async def get_sources():

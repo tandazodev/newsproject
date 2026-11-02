@@ -1,0 +1,3 @@
+# Solo para correr las pruebas (no se instala en la imagen).
+-r requirements.txt
+pytest==8.3.3

@@ -15,6 +15,7 @@ import asyncio
 import json
 import os
 import re
+import secrets
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -25,7 +26,7 @@ import asyncpg
 import bcrypt
 import jwt
 from asyncpg.exceptions import UniqueViolationError
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -266,10 +267,9 @@ async def startup():
     state["pool"] = pool
     log("db.ready")
 
-    connection = await with_retries("rabbitmq", lambda: aio_pika.connect_robust(RABBITMQ_URL))
-    channel = await connection.channel()
-    # El exchange ya lo crea rabbitmq-init; aquí solo se obtiene.
-    exchange = await channel.get_exchange(EXCHANGE)
+    # Conexión y exchange se reintentan juntos: en el modo distribuido el servicio puede arrancar
+    # antes de que rabbitmq-init cree el exchange, y get_exchange (verificación pasiva) fallaría.
+    connection, channel, exchange = await with_retries("rabbitmq", connect_rabbitmq)
     state["channel"] = channel
     state["exchange"] = exchange
     state["amqp"] = connection
@@ -277,6 +277,18 @@ async def startup():
     connection.close_callbacks.add(lambda *_: log("rabbitmq.connection_lost"))
     connection.reconnect_callbacks.add(lambda *_: log("rabbitmq.reconnected"))
     log("rabbitmq.ready")
+
+
+async def connect_rabbitmq():
+    connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    try:
+        channel = await connection.channel()
+        # El exchange ya lo crea rabbitmq-init; aquí solo se obtiene.
+        exchange = await channel.get_exchange(EXCHANGE)
+    except Exception:
+        await connection.close()   # si no, la conexión robusta seguiría reconectando sola
+        raise
+    return connection, channel, exchange
 
 
 @asynccontextmanager
@@ -292,6 +304,21 @@ async def lifespan(_app):
 
 
 app = FastAPI(title=SERVICE, lifespan=lifespan)
+
+# Modo distribuido (docker-compose.distribuido.yml): el puerto del servicio queda publicado en la
+# red, así que con INTERNAL_TOKEN definido solo se aceptan peticiones que traigan el mismo valor en
+# X-Internal-Token (lo pone el gateway). Vacío (modo de una PC) = sin cambios. /health queda libre
+# para diagnosticar la red.
+INTERNAL_TOKEN = os.environ.get("INTERNAL_TOKEN", "")
+
+
+@app.middleware("http")
+async def internal_token(request: Request, call_next):
+    if INTERNAL_TOKEN and request.url.path != "/health":
+        sent = request.headers.get("x-internal-token", "")
+        if not secrets.compare_digest(sent.encode(), INTERNAL_TOKEN.encode()):
+            return JSONResponse({"detail": "token interno inválido"}, status_code=403)
+    return await call_next(request)
 
 
 @app.get("/health")
