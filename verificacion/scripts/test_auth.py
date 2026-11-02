@@ -1,7 +1,7 @@
 """Registro, login, roles, permisos del gateway y fuentes por usuario (arquitectura 7.1, eventos 3.5)."""
 import asyncio, uuid, jwt, websockets
 from lib import (ADMIN, Tap, WsClient, check, classified_example, envelope, http, ingested_example, login,
-                 publish, registrar, set_prefs, wait_until)
+                 publish, registrar, set_prefs, wait_until, WS_BASE)
 
 
 async def main():
@@ -73,7 +73,7 @@ async def main():
     # --- WebSocket ---
     async def cierre(q):
         try:
-            async with websockets.connect(f"ws://localhost:8080/ws/notifications{q}", open_timeout=10) as w:
+            async with websockets.connect(f"{WS_BASE}{q}", open_timeout=10) as w:
                 await asyncio.wait_for(w.recv(), 5); return "abierto"
         except websockets.ConnectionClosed as e:
             return e.rcvd.code if e.rcvd else None

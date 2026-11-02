@@ -4,12 +4,22 @@ from datetime import datetime, timezone
 from pathlib import Path
 import aio_pika, httpx
 
-REPO = Path("/home/michu117/Documents/Repositories/newsproject")
-GW = "http://localhost:8080"
+import os as _os
+# Todo se puede cambiar por variables de entorno; sin ellas, los valores del modo de una PC.
+#   NP_REPO                raíz del repositorio
+#   NP_GATEWAY             URL del gateway (de ahí sale también la del WebSocket)
+#   NP_AMQP_URL            URL AMQP completa (por defecto, credenciales de NP_ENV_FILE y localhost:5672)
+#   NP_ENV_FILE            archivo con las credenciales de prueba (por defecto, .env.example)
+#   NP_RABBITMQ_CONTAINER  contenedor de RabbitMQ para rabbitmqctl (newsproject-rabbitmq)
+# Ejemplo, modo distribuido con el broker en pc4 y el gateway en pc1:
+#   NP_GATEWAY=http://192.168.50.11:8080 NP_AMQP_URL=amqp://usuario:clave@192.168.50.14:5672/
+REPO = Path(_os.environ.get("NP_REPO") or "/home/michu117/Documents/Repositories/newsproject")
+GW = (_os.environ.get("NP_GATEWAY") or "http://localhost:8080").rstrip("/")
+WS_BASE = GW.replace("https://", "wss://").replace("http://", "ws://") + "/ws/notifications"
+RABBITMQ_CONTAINER = _os.environ.get("NP_RABBITMQ_CONTAINER") or "newsproject-rabbitmq"
 EXCHANGE = "newsproject.events"
 # Cada ejecución guarda capturas y logs en verificacion/ejecuciones/<AAAA-MM-DD_HHMM>/.
 # La fija la variable NP_EJECUCION (la crea correr.sh); si no, se usa la hora actual.
-import os as _os
 EJECUCION = _os.environ.get("NP_EJECUCION") or datetime.now().strftime("%Y-%m-%d_%H%M")
 DIR_EJECUCION = REPO / "verificacion" / "ejecuciones" / EJECUCION
 CAPTURAS = DIR_EJECUCION / "capturas"
@@ -18,14 +28,14 @@ CAPTURAS.mkdir(parents=True, exist_ok=True)
 
 def env_example():
     vals = {}
-    for line in (REPO / ".env.example").read_text().splitlines():
+    for line in Path(_os.environ.get("NP_ENV_FILE") or REPO / ".env.example").read_text().splitlines():
         if "=" in line and not line.strip().startswith("#"):
             k, v = line.split("=", 1); vals[k.strip()] = v.strip()
     return vals
 
 
 E = env_example()
-AMQP_URL = f"amqp://{E['RABBITMQ_USER']}:{E['RABBITMQ_PASS']}@localhost:5672/"
+AMQP_URL = _os.environ.get("NP_AMQP_URL") or f"amqp://{E['RABBITMQ_USER']}:{E['RABBITMQ_PASS']}@localhost:5672/"
 ADMIN = {"email": E["ADMIN_EMAIL"], "password": E["ADMIN_PASSWORD"]}
 
 
@@ -80,7 +90,7 @@ class Tap:
 
 
 class WsClient:
-    def __init__(self, token, base="ws://localhost:8080/ws/notifications"):
+    def __init__(self, token, base=WS_BASE):
         self.url, self.msgs = f"{base}?token={token}", []
     async def __aenter__(self):
         import websockets
@@ -98,7 +108,7 @@ class WsClient:
 
 
 def queues():
-    out = subprocess.run(["docker", "exec", "newsproject-rabbitmq", "rabbitmqctl", "-q", "list_queues", "name", "messages", "consumers"],
+    out = subprocess.run(["docker", "exec", RABBITMQ_CONTAINER, "rabbitmqctl", "-q", "list_queues", "name", "messages", "consumers"],
                          capture_output=True, text=True).stdout
     return {p[0]: (int(p[1]), int(p[2])) for p in (l.split() for l in out.splitlines()[1:]) if len(p) == 3}
 

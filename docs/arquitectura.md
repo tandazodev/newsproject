@@ -459,6 +459,27 @@ Fragmento de `docker-compose.yml`:
 * **Tolerancia al arrancar:** el gateway depende de los servicios con `service_started`, no `service_healthy`: si uno falla, el gateway arranca igual y responde `503` solo en sus rutas. Nginx del frontend resuelve `gateway` en cada petición (DNS interno de Docker), así que arranca aunque el gateway esté detenido y devuelve `503` en JSON si no responde.
 * **Base verificada:** el 25/10/2026, `docker compose up -d --build` en `main` levantó los 9 contenedores, con los servicios `healthy`, `rabbitmq-init` en `Exited (0)` y las 8 colas de tipo quorum. El 01/11/2026 la verificación final del sistema completo (registro y roles, eventos, demo desde la app con Playwright y tolerancia a fallos) pasó 134 de 134 pruebas; los scripts están en `verificacion/scripts/`. Para correrlo hace falta `cp .env.example .env` (con `JWT_SECRET`, `ADMIN_*` y `RABBITMQ_MONITOR_*`) y, en Linux, que el usuario esté en el grupo `docker`.
 
+### 8.1 Modo distribuido en 4 PCs (opcional)
+
+Todo lo anterior describe el modo de una PC, que sigue siendo el principal. Como alternativa, el mismo sistema se puede repartir en 4 PCs Linux, por switch (LAN) o por Tailscale, con `docker-compose.distribuido.yml` (proyecto `newsproject-dist`) y `deploy/levantar.sh <switch|tailscale>`. No cambia el contrato de eventos ni las APIs: solo dónde corre cada contenedor y cómo se encuentran.
+
+| PC | Perfiles | Puertos publicados en su IP |
+| --- | --- | --- |
+| pc1 | `entrada` (gateway + frontend), `usuarios` | 8080, 3000, 8004 |
+| pc2 | `ingesta` | 8001 |
+| pc3 | `clasificacion`, `busqueda` | 8002, 8003 |
+| pc4 | `broker` (RabbitMQ + `rabbitmq-init`), `notificaciones` | 5672, 15672, 8005 |
+
+Diferencias con el modo de una PC:
+
+- **Direcciones:** los servicios llegan a RabbitMQ por la IP de pc4 y el gateway llega a cada servicio por la IP de su PC; Nginx sigue hablando con el gateway por el DNS de Docker porque están en la misma PC. Las IPs vienen de `.env.switch` o `.env.tailscale`, y cada puerto se publica solo en la IP de su PC.
+- **Arranque:** no hay `depends_on` entre PCs. Cada servicio reintenta toda su preparación de RabbitMQ (conexión, exchange, cola y consumidor) hasta que pc4 y `rabbitmq-init` están listos.
+- **Token interno:** como los servicios quedan publicados en la red, el gateway envía `X-Internal-Token` (variable `INTERNAL_TOKEN`, que toma el valor de `DISTRIBUTED_INTERNAL_TOKEN`) en REST, `/health` y el WebSocket, y cada servicio responde `403` si no coincide; `GET /health` queda libre. En el modo de una PC la variable está vacía y no cambia nada.
+- **Datos:** cada PC guarda solo las bases de datos de sus servicios, en volúmenes `newsproject-dist_*`, separados de los del modo de una PC.
+- **Verificación:** `deploy/revisar_red.sh <switch|tailscale>` revisa el alcance de cada PC, el puerto de cada componente y su `/health`; los scripts de `verificacion/scripts/` aceptan `NP_GATEWAY`, `NP_AMQP_URL` y otras variables para apuntar al modo distribuido.
+
+Pasos completos, orden de pruebas y problemas comunes: [`docs/despliegue-distribuido.md`](despliegue-distribuido.md).
+
 ## 9. Estructura del repositorio y flujo Git
 
 Un solo repositorio ([YooneR1209/newsproject](https://github.com/YooneR1209/newsproject)) con una carpeta por servicio y la infraestructura compartida en `infra/`.
