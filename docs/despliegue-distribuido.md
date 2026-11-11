@@ -174,7 +174,7 @@ sudo tailscale up            # abre el enlace que muestra e inicia sesión con l
 tailscale ip -4              # anota esta IP 100.x.y.z
 ```
 
-Las 4 PCs deben iniciar sesión en la **misma tailnet**. Comprueba desde una PC que llegas a otra: `tailscale ping <IP 100.x de otra PC>`.
+Las 4 PCs deben iniciar sesión en la **misma tailnet**. Comprueba desde una PC que llegas a otra: `tailscale ping <IP 100.x de otra PC>`. Si responde `pong ... via DERP(...)`, la conexión pasa por un relay de Tailscale: funciona igual, con algo más de latencia, y `deploy/revisar_red.sh` la da por buena.
 
 ### 6.2 Archivos
 
@@ -346,6 +346,9 @@ sudo ufw allow 8001/tcp
 ```
 
 Puertos por PC: pc1 `3000 8080 8004`, pc2 `8001`, pc3 `8002 8003`, pc4 `5672 15672 8005`.
+
+**Tailscale responde «via DERP» en lugar de una conexión directa**
+Las PCs se comunican por un relay de Tailscale (por ejemplo, por la red de la universidad o un firewall). El sistema funciona igual, con algo más de latencia; `revisar_red.sh` lo marca OK. No hace falta cambiar nada.
 
 **`revisar_red.sh`: `no responde al ping`**
 Revisa cable y switch (o `tailscale status`), que la IP de `.env.<red>` sea la de esa PC y que su firewall no bloquee el ping. Si el ping falla pero los puertos responden, solo está bloqueado ICMP y puedes seguir.

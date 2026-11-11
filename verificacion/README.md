@@ -37,3 +37,11 @@ cd verificacion/scripts
 
 Las credenciales salen de `.env.example` (RabbitMQ y administrador inicial). Las pruebas crean
 usuarios `v-*@ejemplo.com`, que se borran con `docker compose down -v`.
+
+## Modo distribuido
+
+`lib.py` acepta `NP_REPO`, `NP_GATEWAY`, `NP_AMQP_URL`, `NP_ENV_FILE` y `NP_RABBITMQ_CONTAINER`;
+sin ellas usa los valores del modo de una PC. Con esas variables, `test_auth`, `test_ingesta`,
+`test_clasif_busqueda`, `test_notificaciones`, `test_backfill` y `test_productores_tras_reinicio`
+corren contra el modo distribuido desde pc4. Pasos en
+[`docs/despliegue-distribuido.md`](../docs/despliegue-distribuido.md), sección 8.6.

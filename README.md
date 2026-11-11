@@ -4,6 +4,7 @@ Agregador de noticias con microservicios (Sistemas Distribuidos, UNL). Ingesta l
 
 - Arquitectura completa: [`docs/arquitectura.md`](docs/arquitectura.md)
 - Contrato de eventos: [`docs/eventos.md`](docs/eventos.md) — **léanlo antes de programar**
+- Estado: **proyecto terminado**; la versión entregada se publica como release `v1.0`. Estado final y limitaciones conocidas: [`docs/arquitectura.md`, sección 13](docs/arquitectura.md#13-cambios-respecto-a-la-versión-anterior-y-estado-final)
 
 ![Arquitectura](docs/img/arquitectura.png)
 
@@ -194,7 +195,7 @@ Ingesta arma el texto de cada noticia con las mismas funciones que el recolector
 - Los cambios llegan a `main` por pull request revisado por otro integrante.
 - Antes de cada merge, `docker compose up -d --build` debe levantar el sistema completo.
 - Los contratos de eventos y de REST (`docs/eventos.md`, `docs/arquitectura.md` secciones 5 a 7) solo cambian por pull request aprobado por los cuatro.
-- Un solo release al final: `v1.0`. No se crean releases intermedios.
+- La versión entregada se publica como único release `v1.0` desde `main`; no hay releases intermedios.
 
 ## Problemas comunes
 
