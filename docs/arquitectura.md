@@ -1,6 +1,6 @@
-# Documento de Arquitectura – Agregador de Noticias (v3)
+# Documento de Arquitectura – Agregador de Noticias (versión final)
 
-Actualizado el 01/11/2026 · Fabricio Josue Ruiz Aguilar · versión editable: https://claude.ai/artifact/N3raGZTxeEY26hnUBe1fVx
+Versión final del 11/11/2026 · Fabricio Josue Ruiz Aguilar · versión editable: https://claude.ai/artifact/N3raGZTxeEY26hnUBe1fVx
 
 ## 1. Introducción y alcance
 
@@ -46,7 +46,7 @@ Son cinco microservicios de negocio, cada uno con su backend y su base de datos 
 | Servicio (carpeta) | Responsabilidad | Stack | Base de datos propia (mismo contenedor) | Publica | Consume | Responsable |
 | --- | --- | --- | --- | --- | --- | --- |
 | Ingesta (`ingesta/`) | Lee feeds RSS y sitios web, limpia el texto, deduplica y publica artículos | Python 3.12+ · FastAPI · feedparser · BeautifulSoup4 | MongoDB: fuentes, artículos crudos y bitácora de scraping | `article.ingested` | — | Kevin |
-| Clasificación (`clasificacion/`) | Asigna categoría, etiquetas y puntaje de confianza | Python · FastAPI · scikit-learn (TF-IDF + Naive Bayes o regresión logística) | PostgreSQL: categorías, versiones del modelo con sus métricas y artículos clasificados | `article.classified` | `article.ingested` | Fabricio |
+| Clasificación (`clasificacion/`) | Asigna categoría, etiquetas y puntaje de confianza | Python · FastAPI · scikit-learn (TF-IDF + regresión logística) | PostgreSQL: categorías, versiones del modelo con sus métricas y artículos clasificados | `article.classified` | `article.ingested` | Fabricio |
 | Búsqueda (`busqueda/`) | Indexa artículos clasificados y atiende consultas de texto | Python · FastAPI | MongoDB con índice de texto | — | `article.classified` | Fabricio |
 | Usuarios (`usuarios/`) | Registro, inicio de sesión (emite el JWT), roles y gestión de preferencias | Python · FastAPI · bcrypt · PyJWT | PostgreSQL: usuarios (con hash de contraseña y rol) y preferencias | `user.preferences.updated` | — | Ariana |
 | Notificaciones (`notificaciones/`) | Cruza artículos con preferencias, guarda alertas y las emite por WebSocket | Java 21 · Spring Boot | PostgreSQL: copia de preferencias, copia de los artículos clasificados de los últimos 7 días y alertas | — | `article.classified`, `user.preferences.updated` | Ariel |
@@ -54,7 +54,7 @@ Son cinco microservicios de negocio, cada uno con su backend y su base de datos 
 | Frontend (`frontend/`) | SPA: login y registro, feed en vivo (bandeja Nuevas/Leídas), búsqueda, fuentes (alta y scraping para el admin; encender o apagar en mi feed para todos), preferencias y panel del sistema (solo admin) | React · Vite, servido con Nginx | Sin BD | — | — | Todo el grupo |
 | RabbitMQ | Broker de mensajes | `rabbitmq:3.13-management` | Volumen de persistencia | — | — | Todo el grupo |
 
-Los servicios solo comparten contratos de eventos (sección 5) y de REST (sección 7), por eso cada integrante puede usar su lenguaje. El informe debe reflejar que Notificaciones está en Java y no en Python.
+Los servicios solo comparten contratos de eventos (sección 5) y de REST (sección 7), por eso cada integrante pudo usar su lenguaje: Notificaciones está en Java 21 con Spring Boot y el resto en Python.
 
 ### 3.1 Método de clasificación: TF-IDF + clasificador supervisado
 
@@ -62,10 +62,10 @@ Clasificación usa un modelo de scikit-learn entrenado con noticias ya etiquetad
 
 1. **Dataset:** noticias en español etiquetadas por la sección de su feed (sección 3.2). Se entrena con todas menos las del conjunto de prueba revisado a mano, que se reserva para evaluar.
 2. **Vectorización:** `TfidfVectorizer` sobre título + cuerpo, con stopwords en español, unigramas y bigramas.
-3. **Clasificador:** se entrenan `MultinomialNB` y `LogisticRegression` en un `Pipeline` y se comparan con validación cruzada; se queda el de mayor F1 macro.
+3. **Clasificador:** se entrenaron `MultinomialNB` y `LogisticRegression` en un `Pipeline` y se compararon con validación cruzada; quedó `LogisticRegression`, la de mayor F1 macro. El modelo final se entrenó con 1543 noticias y obtuvo F1 macro 0,858 (precisión 0,869, recall 0,860) sobre las 140 del conjunto de prueba revisado a mano; las métricas completas están en `clasificacion/model/metrics.json` y en `GET /api/model`.
 4. **Evaluación:** precisión, exhaustividad (recall) y F1 por categoría y macro, más la matriz de confusión; estos valores van a los resultados del informe.
-5. **Despliegue:** el script `clasificacion/train.py` entrena fuera de línea y guarda el pipeline con `joblib` (`model.joblib`); el servicio lo carga al arrancar y registra su versión y métricas en su BD.
-6. **Inferencia por evento:** `category` = clase con mayor probabilidad (`predict_proba`), `score` = esa probabilidad. Si `score` es menor que un umbral configurable (`MIN_SCORE`, inicial 0.5), la categoría es `otros`.
+5. **Despliegue:** el script `clasificacion/tools/train.py` entrena fuera de línea y guarda el pipeline con `joblib` (`clasificacion/model/model.joblib`); el servicio lo carga al arrancar y registra su versión y métricas en su BD.
+6. **Inferencia por evento:** `category` = clase con mayor probabilidad (`predict_proba`), `score` = esa probabilidad. Si `score` es menor que un umbral configurable (`MIN_SCORE`, 0.5 por defecto; `CLASIFICACION_MIN_SCORE` en `.env`), la categoría es `otros`.
 7. **Etiquetas:** `tags` = los 5 términos con mayor peso TF-IDF del artículo, normalizados en minúsculas y con guiones.
 
 ### 3.2 Cómo se obtiene el dataset
@@ -79,9 +79,9 @@ Las etiquetas no se ponen a mano: salen de la **sección** del medio. Todo lo pu
 | Ejecución periódica | `.github/workflows/dataset.yml` | GitHub Actions corre el recolector cada hora, aunque nadie tenga la PC encendida |
 | Dataset acumulado | rama `dataset` del repositorio (`dataset.csv`) | Fuera de `main`, para no ensuciar el historial; `.gitignore` excluye `dataset.csv` de las demás ramas |
 
-- **Plazo:** el grupo deja correr la recolección unos 5 días antes de entrenar el modelo final; mientras tanto se entrena un modelo provisional con lo acumulado.
+- **Plazo:** la recolección corrió varios días antes de entrenar el modelo final, con 1543 noticias para entrenar.
 - **Categoría `otros`:** no se recolecta; la asigna el servicio cuando la confianza es menor que `MIN_SCORE`.
-- **Conjunto de prueba:** `collect_dataset.py --sample-test N` toma la misma cantidad por categoría y, dentro de cada una, mezcla noticias ecuatorianas y extranjeras (`--local-share`, por defecto 50 %). El grupo revisa a mano la columna `category_revisada`; sobre ese conjunto se miden precisión, recall y F1.
+- **Conjunto de prueba:** `collect_dataset.py --sample-test N` toma la misma cantidad por categoría y, dentro de cada una, mezcla noticias ecuatorianas y extranjeras (`--local-share`, por defecto 50 %). El grupo revisó a mano la columna `category_revisada` de las 140 noticias de `clasificacion/data/test_set.csv`; sobre ese conjunto se midieron precisión, recall y F1.
 - **Riesgos conocidos:** algunas categorías dependen de una sola fuente extranjera (salud y tecnología, de Perfil), lo que puede hacer que el modelo aprenda el medio en vez del tema; y los feeds por sección traen algo de ruido (notas de otra temática). Ambos se controlan con la mezcla del conjunto de prueba y midiendo el F1 por categoría.
 
 **Compatibilidad con Ingesta.** El modelo solo clasifica bien si en producción recibe textos armados igual que al entrenar. Por eso Ingesta copia tal cual de `collect_dataset.py` las funciones `normalize_url`, `clean_html` y `entry_text`; su `body` es solo el contenido del feed (sin descargar la página), y Clasificación predice sobre `title + ". " + body`. Si esas funciones cambian, se cambian en ambos lados en el mismo pull request.
@@ -362,7 +362,7 @@ Los cinco usan el mismo formato, que lee el panel del administrador; el código 
 - **Registro:** correo (único, sin distinguir mayúsculas), contraseña (mínimo 8 caracteres; se guarda solo su hash bcrypt), nombres, apellidos y username (único; 3 a 30 caracteres: letras minúsculas, números, `.`, `_` o `-`).
 - **Roles:** `admin` y `usuario`. El registro público crea siempre `usuario`. El primer administrador lo crea Usuarios al arrancar con `ADMIN_EMAIL`, `ADMIN_PASSWORD` y `ADMIN_USERNAME` del `.env` (si ya existe, no hace nada).
 - **Token:** `POST /api/auth/login` devuelve un JWT HS256 firmado con `JWT_SECRET` (compartido solo entre Usuarios y el gateway), con `sub` = `user_id`, `role` y vencimiento de 8 horas. El frontend lo envía en `Authorization: Bearer <token>` y en el WebSocket como `?token=`.
-- **El gateway aplica los permisos** antes de enrutar y reenvía `X-User-Id` y `X-User-Role` al servicio (los servicios no son accesibles desde fuera de la red de Docker):
+- **El gateway aplica los permisos** antes de enrutar y reenvía `X-User-Id` y `X-User-Role` al servicio (en el modo de una PC los servicios no son accesibles desde fuera de la red de Docker; en el modo distribuido sí se publican, y solo aceptan peticiones con el token interno del gateway, sección 8.1):
 
 | Ruta | Sin token | `usuario` | `admin` |
 | --- | --- | --- | --- |
@@ -497,7 +497,9 @@ Un solo repositorio ([YooneR1209/newsproject](https://github.com/YooneR1209/news
 newsproject/
 ├── docker-compose.yml
 ├── docker-compose.override.yml   (puerto 5672 en desarrollo)
+├── docker-compose.distribuido.yml (modo distribuido en 4 PCs, sección 8.1)
 ├── .env.example
+├── .env.distribuido.example, .env.switch.example, .env.tailscale.example, .env.pc.example
 ├── .gitignore                    (.env, .idea/, dataset.csv, __pycache__/, node_modules/, target/, verificacion/ejecuciones)
 ├── README.md
 ├── .github/
@@ -510,12 +512,16 @@ newsproject/
 │   ├── despliegue-distribuido.md (modo distribuido en 4 PCs)
 │   ├── capturas/                 (pantallas de la app para el README)
 │   └── declaratoria-ia.pdf
+├── deploy/
+│   ├── levantar.sh               (levanta la parte de cada PC en el modo distribuido)
+│   └── revisar_red.sh            (revisa red, puertos y /health entre las 4 PCs)
 ├── infra/
 │   └── rabbitmq/definitions.json
 ├── ingesta/          (Dockerfile + supervisord.conf: backend y MongoDB)
 ├── clasificacion/    (Dockerfile + supervisord.conf: backend y PostgreSQL)
-│   ├── data/feeds.csv            (feeds por sección para el dataset)
-│   └── tools/collect_dataset.py  (recolector; train.py y model.joblib van aquí también)
+│   ├── data/                     (feeds.csv por sección y test_set.csv revisado a mano)
+│   ├── tools/                    (collect_dataset.py: recolector · train.py: entrenamiento)
+│   └── model/                    (model.joblib y metrics.json del modelo final)
 ├── busqueda/         (Dockerfile + supervisord.conf: backend y MongoDB)
 ├── usuarios/         (Dockerfile + supervisord.conf: backend y PostgreSQL)
 ├── notificaciones/   (Dockerfile + supervisord.conf: backend y PostgreSQL)
@@ -528,7 +534,7 @@ newsproject/
 Rama dataset: solo dataset.csv, actualizado por GitHub Actions.
 ```
 
-`infra/postgres/init.sql` deja de ser necesario: cada contenedor de servicio con PostgreSQL crea su propia base con `POSTGRES_DB`.
+No hay scripts de inicialización de PostgreSQL: cada contenedor de servicio con PostgreSQL crea su propia base con `POSTGRES_DB`.
 
 **Flujo de ramas**
 
@@ -536,7 +542,7 @@ Rama dataset: solo dataset.csv, actualizado por GitHub Actions.
 2. Los cambios llegan a `main` por pull request revisado por otro integrante.
 3. Los contratos de eventos (sección 5) y de REST (sección 7) solo cambian por pull request aprobado por los cuatro.
 4. Antes de cada merge, `docker compose up -d --build` debe levantar el sistema completo.
-5. Al terminar se publica un único release `v1.0` desde `main`; no hay releases intermedios.
+5. La versión entregada se publica como único release `v1.0` desde `main`; no hay releases intermedios.
 
 | Entregable | Ubicación |
 | --- | --- |
@@ -545,7 +551,7 @@ Rama dataset: solo dataset.csv, actualizado por GitHub Actions.
 | Código con rama por integrante, Dockerfiles y compose | Repositorio Git |
 | README con `docker compose up` | Raíz del repositorio |
 | Declaratoria de IA firmada | `docs/declaratoria-ia.pdf` |
-| Release v1.0 | Pestaña Releases del repositorio |
+| Release v1.0 (versión entregada) | Pestaña Releases del repositorio |
 
 ## 10. Métricas y trazabilidad
 
@@ -609,7 +615,7 @@ Estas pruebas alimentan el objetivo específico 2 del informe y la métrica de d
 | Autenticación con JWT validado en el gateway | Un solo punto aplica los permisos y los servicios siguen sin estado de sesión; el secreto se comparte solo entre Usuarios y el gateway. A cambio, un token no se puede revocar antes de vencer (8 horas) y no hay recuperación de contraseña |
 | Fuentes por usuario como lista de desactivadas | Las fuentes nuevas llegan a todos sin que nadie tenga que activarlas; el filtro lo aplica Notificaciones con su copia local, sin llamar a Usuarios ni a Ingesta |
 
-## 13. Cambios respecto a la versión anterior y pendientes
+## 13. Cambios respecto a la versión anterior y estado final
 
 | Tema | Versión 21/10 | Esta versión | Origen |
 | --- | --- | --- | --- |
@@ -631,24 +637,24 @@ Estas pruebas alimentan el objetivo específico 2 del informe y la métrica de d
 | Feed | Lista de alertas en vivo | Bandeja en dos paneles (Nuevas · Leídas + detalle); relleno inicial con las 20 coincidencias recientes (`backfill`); al cambiar preferencias se borran las no leídas que ya no coinciden; retención de 7 días | Decisión del grupo |
 | Ingesta automática | Cada 10 minutos | Cada 5 minutos (`SCRAPING_INTERVAL_MINUTES`), al ritmo en que los medios refrescan sus feeds | Decisión del grupo |
 | Monitoreo | Panel de RabbitMQ | Además, panel del sistema `/admin` (solo admin) con el estado de cada servicio, su BD y sus colas; `/health` con formato común | Decisión del grupo |
+| Despliegue | Una sola PC | Además, modo distribuido opcional en 4 PCs (switch o Tailscale) con token interno entre el gateway y los servicios (sección 8.1) | Decisión del grupo |
+| Diagramas | Diagrama general | Diagrama de arquitectura con el tipo de comunicación de cada flecha y diagrama de componentes UML (secciones 2 y 2.1) | Decisión del grupo |
 
-**Pendientes para alinear el repositorio con este documento**
+**Estado final**
 
-- [x] `definitions.json`: colas principales a tipo quorum con `x-delivery-limit: 3`
-- [x] `docker-compose.yml`: BD dentro del contenedor de cada servicio, credenciales por servicio en `.env.example` y el puerto 5672 en `docker-compose.override.yml`
-- [x] `docker-compose.yml` y `nginx.conf`: gateway y frontend toleran servicios caídos al arrancar
-- [x] `docs/eventos.md`: `article_id` como UUID v5 e idempotencia por entidad
-- [x] README corregido y `.idea/` fuera del repositorio
-- [x] Base probada con `docker compose up -d --build`: 9 contenedores, servicios healthy, 8 colas quorum
-- [x] Fuente del dataset: feeds por sección, recolector y GitHub Actions con la rama `dataset`
-- [ ] Dejar correr la recolección unos 5 días, generar `test_set.csv` y revisarlo a mano
-- [x] Entrenar el modelo final (`clasificacion/model/`, regresión logística, F1 macro 0,858)
-- [ ] Revisar `MIN_SCORE` (hoy 0,5) con el conjunto de prueba: con feeds generales muchas noticias caen en `otros`
-- [x] Implementar cada servicio sobre su plantilla (`/health` real, consumidores, endpoints)
-- [x] Sincronizar `docs/arquitectura.md` y docs/eventos.md (campo image\_url) del repositorio con esta versión
-- [x] Implementar usuarios con contraseña, roles y fuentes por usuario (secciones 5.3 y 7.1): Usuarios, gateway, Ingesta, Clasificación, Búsqueda, Notificaciones y frontend
-- [x] Feed en dos paneles, relleno inicial, limpieza por preferencias y retención; panel del sistema `/admin`
-- [x] Diagrama de arquitectura actualizado y detallado (sección 2)
-- [ ] Aprobar por pull request, entre los cuatro, los cambios de contrato de esta versión (secciones 5.3, 6, 7 y 7.1; `docs/eventos.md` 3.1–3.5 y 7)
-- [ ] Quitar de `clasificacion/data/feeds.csv` los feeds de Ecuavisa (responden 403 a clientes que no son navegador)
-- [ ] Informe: actualizar herramientas (Notificaciones en Java) y reemplazar la metodología de Raft/Paxos que quedó de la plantilla
+El proyecto está terminado. Lo entregado en `main`:
+
+- Los cinco microservicios, el gateway y el frontend, implementados según el contrato de eventos (`docs/eventos.md`) y las secciones 5 a 7: registro e inicio de sesión con JWT, roles `admin` y `usuario`, fuentes por usuario, feed en vivo con relleno inicial y retención, búsqueda con y sin tildes y panel del sistema `/admin`.
+- Topología de RabbitMQ con colas quorum, límite de 3 entregas y DLQ, cargada por `rabbitmq-init`; cada servicio con su BD dentro de su contenedor y `/health` con formato común.
+- Dataset recolectado por GitHub Actions en la rama `dataset`, conjunto de prueba de 140 noticias revisado a mano y modelo final de regresión logística con F1 macro 0,858 (sección 3.1).
+- Verificación del sistema completo con los scripts de `verificacion/scripts/`: 134 de 134 pruebas el 01/11/2026 (sección 8). El modo distribuido se verificó el 02/11/2026 simulando las 4 PCs en una sola máquina, con `deploy/revisar_red.sh` y los mismos scripts.
+- Modo distribuido opcional en 4 PCs con su guía (`docs/despliegue-distribuido.md`) y los dos diagramas de la sección 2.
+- Los cambios de contrato y de código llegaron a `main` por pull request. La versión entregada se publica como release `v1.0` (sección 9).
+
+**Limitaciones conocidas**
+
+- Los 4 feeds de Ecuavisa siguen en `clasificacion/data/feeds.csv`, pero responden `403` a clientes que no son navegador, así que no aportan noticias al dataset.
+- `MIN_SCORE` quedó en su valor por defecto (0,5), sin ajustarlo con el conjunto de prueba; con feeds generales, parte de las noticias cae en `otros`. Se puede cambiar con `CLASIFICACION_MIN_SCORE`.
+- Algunas categorías dependen de una sola fuente extranjera (salud y tecnología, de Perfil), lo que puede hacer que el modelo aprenda el medio en vez del tema (sección 3.2).
+- Mientras se reconecta a RabbitMQ, el `/health` de Ingesta puede seguir respondiendo `200`; los demás servicios responden `503` en ese caso.
+- Un token JWT no se puede revocar antes de vencer (8 horas) y no hay recuperación de contraseña (sección 12).
